@@ -655,6 +655,24 @@ body {
 }
 /* --- FIN DE LA CORRECCIÓN DE ALINEACIÓN --- */
 
+/* --- ▼▼▼ NUEVA CLASE PARA EL ICONO DE CONTRASEÑA ▼▼▼ --- */
+.settings-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5fa;
+    color: #000000;
+    flex-shrink: 0;
+}
+
+.settings-card-icon .material-symbols-rounded {
+    font-size: 28px;
+}
+/* --- ▲▲▲ FIN DE LA NUEVA CLASE ▲▲▲ --- */
+
 .settings-card-left {
     display: flex;
     flex: 1 1 auto;
@@ -1052,4 +1070,49 @@ body {
         right: 12px;
         width: auto;
     }
+}/* --- ▼▼▼ NUEVOS ESTILOS PARA TOGGLE 2FA ▼▼▼ --- */
+.settings-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px; /* Ancho del contenedor */
+    height: 32px; /* Alto del contenedor */
+}
+
+.settings-toggle-switch .settings-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+    border-radius: 34px; /* Bordes redondeados */
+}
+
+.settings-toggle-switch .settings-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px; /* Alto del círculo */
+    width: 24px; /* Ancho del círculo */
+    left: 4px; /* Posición inicial */
+    bottom: 4px; /* Posición inicial */
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%; /* Círculo */
+}
+
+/* Estilo cuando está activado (checked) */
+.settings-toggle-switch input:checked + .settings-toggle-slider {
+    background-color: #000; /* Color de fondo activo (negro) */
+}
+
+/* Animación del círculo al activar */
+.settings-toggle-switch input:checked + .settings-toggle-slider:before {
+    transform: translateX(20px); /* Mover 20px (52px - 20px - 4px - 4px) -> (52-24-4-4 = 20) */
+}
+
+/* Estilo de foco para accesibilidad */
+.settings-toggle-switch input:focus-visible + .settings-toggle-slider {
+    box-shadow: 0 0 1px #000;
 }

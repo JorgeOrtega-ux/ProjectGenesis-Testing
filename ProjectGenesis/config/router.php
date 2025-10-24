@@ -65,6 +65,58 @@ if (array_key_exists($page, $allowedPages)) {
         // --- ▼▼▼ LÍNEA AÑADIDA ▼▼▼ ---
         $userEmail = $_SESSION['email'] ?? 'correo@ejemplo.com';
         // --- ▲▲▲ FIN LÍNEA AÑADIDA ▲▲▲ ---
+
+    // --- ▼▼▼ INICIO DE LA NUEVA LÓGICA (settings-login) ▼▼▼ ---
+    } elseif ($page === 'settings-login') {
+        
+        // --- ▼▼▼ ¡INICIO DE LA MODIFICACIÓN! ▼▼▼ ---
+        try {
+            // 1. Consultar el último log de cambio de contraseña
+            $stmt_pass_log = $pdo->prepare(
+                "SELECT changed_at FROM user_audit_logs 
+                 WHERE user_id = ? AND change_type = 'password' 
+                 ORDER BY changed_at DESC LIMIT 1"
+            );
+            $stmt_pass_log->execute([$_SESSION['user_id']]);
+            $lastLog = $stmt_pass_log->fetch();
+
+            if ($lastLog) {
+                // 2. Formatear la fecha
+                // Comprobar si la extensión 'intl' está cargada
+                if (!class_exists('IntlDateFormatter')) {
+                     // Fallback simple si 'intl' no está
+                    $date = new DateTime($lastLog['changed_at']);
+                    $lastPasswordUpdateText = 'Última actualización: ' . $date->format('d/m/Y');
+                } else {
+                    // Formato localizado (ej: 30 de septiembre de 2024)
+                    $formatter = new IntlDateFormatter(
+                        'es_ES', // Locale español
+                        IntlDateFormatter::LONG, // Formato de fecha (largo)
+                        IntlDateFormatter::NONE, // Formato de hora (ninguno)
+                        'UTC' // Zona horaria (la BD guarda en UTC)
+                    );
+                    $timestamp = strtotime($lastLog['changed_at']);
+                    $lastPasswordUpdateText = 'Última actualización: ' . $formatter->format($timestamp);
+                }
+            } else {
+                // 3. Mensaje por defecto si no hay logs
+                $lastPasswordUpdateText = 'Nunca se ha actualizado la contraseña.';
+            }
+
+            // 4. Obtener el estado de 2FA
+            $stmt_2fa = $pdo->prepare("SELECT is_2fa_enabled FROM users WHERE id = ?");
+            $stmt_2fa->execute([$_SESSION['user_id']]);
+            $is2faEnabled = (int)$stmt_2fa->fetchColumn(); // Cast a int (0 o 1)
+
+        } catch (PDOException $e) {
+            // En caso de error de BD (ej. tabla/columna aún no existe), mostrar mensaje genérico
+            logDatabaseError($e, 'router - settings-login');
+            $lastPasswordUpdateText = 'No se pudo cargar el historial de actualizaciones.';
+            $is2faEnabled = 0; // Por defecto 0 si hay error
+        }
+        // --- ▲▲▲ ¡FIN DE LA MODIFICACIÓN! ▲▲▲ ---
+        // --- ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲ ---
+
     }
     // --- ▲▲▲ FIN DE LA LÓGICA MOVIDA ▲▲▲ ---
 

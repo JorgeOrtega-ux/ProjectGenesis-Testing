@@ -161,7 +161,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['newAvatarUrl'] = $newPublicUrl;
 
             } catch (Exception $e) {
-                $response['message'] = $e->getMessage();
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - upload-avatar');
+                    $response['message'] = 'Error al guardar en la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             }
         }
 
@@ -195,7 +202,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['newAvatarUrl'] = $newDefaultUrl;
 
             } catch (Exception $e) {
-                $response['message'] = $e->getMessage();
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - remove-avatar');
+                    $response['message'] = 'Error al actualizar la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             }
         }
 
@@ -305,7 +319,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
             } catch (Exception $e) {
-                $response['message'] = $e->getMessage();
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - update-username');
+                    $response['message'] = 'Error al actualizar la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             }
         }
         
@@ -335,26 +356,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['message'] = 'Se ha generado un código de verificación.';
 
             } catch (Exception $e) {
-                if (strpos($e->getMessage(), 'Data truncated') !== false) {
-                     $response['message'] = "Error de BD: El tipo '{$codeType}' no existe en el ENUM 'code_type' de la tabla 'verification_codes'. Asegúrate de añadirlo.";
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - request-email-change-code');
+                    if (strpos($e->getMessage(), 'Data truncated') !== false) {
+                         $response['message'] = "Error de BD: El tipo '{$codeType}' no existe en el ENUM 'code_type' de la tabla 'verification_codes'. Asegúrate de añadirlo.";
+                    } else {
+                        $response['message'] = 'Error al generar el código en la base de datos.';
+                    }
                 } else {
-                    $response['message'] = 'Error al generar el código: ' . $e->getMessage();
+                    $response['message'] = 'Error: ' . $e->getMessage();
                 }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             }
         }
 
-        // --- ACCIÓN: VERIFICAR CÓDIGO PARA CAMBIAR EMAIL ---
+        // --- ACCIÓN: VERIFICAR CÓDIGO PARA CAMBIAR EMAIL (MODIFICADA) ---
         elseif ($action === 'verify-email-change-code') {
             try {
                 $submittedCode = str_replace('-', '', $_POST['verification_code'] ?? '');
-                $identifier = $userId;
+                $identifier = $userId; // $userId is from session
                 $codeType = 'email_change';
+                
+                // --- ▼▼▼ INICIO DE LA LÓGICA DE RATE LIMIT ▼▼▼ ---
+                $ip = getIpAddress(); // Obtener IP (de config.php)
+
+                // 1. VERIFICAR BLOQUEO
+                // (Usamos el $identifier = $userId para el log)
+                if (checkLockStatus($pdo, $identifier, $ip)) {
+                    throw new Exception('Demasiados intentos fallidos. Por favor, inténtalo de nuevo en ' . LOCKOUT_TIME_MINUTES . ' minutos.');
+                }
+                // --- ▲▲▲ FIN DE LA LÓGICA DE RATE LIMIT ▼▼▼ ---
+
 
                 if (empty($submittedCode)) {
                     throw new Exception('Por favor, introduce el código de verificación.');
                 }
 
-                // 1. Buscar el código válido (15 min de validez)
+                // 2. Buscar el código válido (15 min de validez)
                 $stmt = $pdo->prepare(
                     "SELECT * FROM verification_codes 
                      WHERE identifier = ? 
@@ -364,12 +403,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$identifier, $codeType]);
                 $codeData = $stmt->fetch();
 
-                // 2. Comparar
+                // 3. Comparar
                 if (!$codeData || strtolower($codeData['code']) !== strtolower($submittedCode)) {
+                    
+                    // --- ▼▼▼ INICIO DE LA LÓGICA DE RATE LIMIT ▼▼▼ ---
+                    // 3.5 LOG DE INTENTO FALLIDO
+                    // --- MODIFICACIÓN: El ENUM 'email_change_fail' no existe, usamos 'password_verify_fail' que es genérico ---
+                    logFailedAttempt($pdo, $identifier, $ip, 'password_verify_fail'); 
+                    // --- FIN DE LA MODIFICACIÓN ---
+                    
                     throw new Exception('El código es incorrecto o ha expirado.');
                 }
 
-                // 3. ¡Éxito! Limpiar el código usado
+                // 4. ¡Éxito!
+                
+                // --- ▼▼▼ INICIO DE LA LÓGICA DE RATE LIMIT ▼▼▼ ---
+                // 4.1 LIMPIAR INTENTOS FALLIDOS (al tener éxito)
+                clearFailedAttempts($pdo, $identifier);
+                // --- ▲▲▲ FIN DE LA LÓGICA DE RATE LIMIT ▼▼▼ ---
+                
+                // 4.2 Limpiar el código usado
                 $stmt = $pdo->prepare("DELETE FROM verification_codes WHERE id = ?");
                 $stmt->execute([$codeData['id']]);
 
@@ -377,7 +430,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['message'] = 'Verificación correcta. Ya puedes editar tu email.';
 
             } catch (Exception $e) {
-                $response['message'] = $e->getMessage();
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - verify-email-change-code');
+                    $response['message'] = 'Error al verificar en la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             }
         }
 
@@ -460,9 +520,179 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['newEmail'] = $newEmail;
         
             } catch (Exception $e) {
-                $response['message'] = $e->getMessage();
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - update-email');
+                    $response['message'] = 'Error al actualizar la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             }
         }
+
+        // --- ▼▼▼ INICIO: NUEVA ACCIÓN (VERIFICAR CONTRASEÑA ACTUAL) ▼▼▼ ---
+        elseif ($action === 'verify-current-password') {
+            try {
+                $ip = getIpAddress();
+                $identifier = $userId; // Usamos el ID de usuario como identificador para el rate limit
+                $currentPassword = $_POST['current_password'] ?? '';
+
+                // 1. VERIFICAR BLOQUEO
+                if (checkLockStatus($pdo, $identifier, $ip)) {
+                    throw new Exception('Demasiados intentos fallidos. Por favor, inténtalo de nuevo en ' . LOCKOUT_TIME_MINUTES . ' minutos.');
+                }
+                
+                if (empty($currentPassword)) {
+                    throw new Exception('Por favor, introduce tu contraseña actual.');
+                }
+
+                // 2. Obtener hash actual de la BD
+                $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                $stmt->execute([$userId]);
+                $hashedPassword = $stmt->fetchColumn();
+
+                // 3. Verificar
+                if ($hashedPassword && password_verify($currentPassword, $hashedPassword)) {
+                    // Éxito
+                    clearFailedAttempts($pdo, $identifier);
+                    $response['success'] = true;
+                    $response['message'] = 'Contraseña actual correcta.';
+                } else {
+                    // Fallo
+                    logFailedAttempt($pdo, $identifier, $ip, 'password_verify_fail');
+                    throw new Exception('La contraseña actual es incorrecta.');
+                }
+
+            } catch (Exception $e) {
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - verify-current-password');
+                    $response['message'] = 'Error al verificar en la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+            }
+        }
+        // --- ▲▲▲ FIN: NUEVA ACCIÓN (VERIFICAR CONTRASEÑA ACTUAL) ▲▲▲ ---
+
+        // --- ACCIÓN: ACTUALIZAR CONTRASEÑA (MODIFICADA) ---
+        elseif ($action === 'update-password') {
+            try {
+                
+                // --- ▼▼▼ INICIO DE LA LÓGICA DE RATE LIMIT (PASSWORD) ▼▼▼ ---
+                define('PASSWORD_CHANGE_COOLDOWN_HOURS', 24);
+
+                $stmt_check_pass = $pdo->prepare(
+                    "SELECT changed_at FROM user_audit_logs 
+                     WHERE user_id = ? AND change_type = 'password' 
+                     ORDER BY changed_at DESC LIMIT 1"
+                );
+                $stmt_check_pass->execute([$userId]);
+                $lastLogPass = $stmt_check_pass->fetch();
+
+                if ($lastLogPass) {
+                    $lastChangeTime = new DateTime($lastLogPass['changed_at'], new DateTimeZone('UTC'));
+                    $currentTime = new DateTime('now', new DateTimeZone('UTC'));
+                    $interval = $currentTime->diff($lastChangeTime);
+                    
+                    // Calcular horas totales
+                    $hoursPassed = ($interval->d * 24) + $interval->h;
+                    
+                    if ($hoursPassed < PASSWORD_CHANGE_COOLDOWN_HOURS) {
+                        $hoursRemaining = PASSWORD_CHANGE_COOLDOWN_HOURS - $hoursPassed;
+                        $plural = ($hoursRemaining == 1) ? 'hora' : 'horas';
+                        throw new Exception("Debes esperar. Podrás cambiar tu contraseña de nuevo en {$hoursRemaining} {$plural}.");
+                    }
+                }
+                // --- ▲▲▲ FIN DE LA LÓGICA DE RATE LIMIT ▲▲▲ ---
+
+                $newPassword = $_POST['new_password'] ?? '';
+                $confirmPassword = $_POST['confirm_password'] ?? '';
+
+                // 1. Validaciones
+                if (empty($newPassword) || empty($confirmPassword)) {
+                    throw new Exception('Por favor, completa ambos campos de nueva contraseña.');
+                }
+                if (strlen($newPassword) < 8) {
+                    throw new Exception('La nueva contraseña debe tener al menos 8 caracteres.');
+                }
+                if ($newPassword !== $confirmPassword) {
+                    throw new Exception('Las nuevas contraseñas no coinciden.');
+                }
+
+                // 2. Obtener hash antiguo (para auditoría)
+                $stmt_get_old = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                $stmt_get_old->execute([$userId]);
+                $oldHashedPassword = $stmt_get_old->fetchColumn();
+                if (!$oldHashedPassword) {
+                    $oldHashedPassword = 'hash_desconocido'; // Fallback
+                }
+
+                // 3. Hashear y actualizar BD
+                $newHashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+                
+                $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $stmt->execute([$newHashedPassword, $userId]);
+
+                // 4. Registrar en auditoría
+                $stmt_log_pass = $pdo->prepare(
+                    "INSERT INTO user_audit_logs (user_id, change_type, old_value, new_value, changed_by_ip) 
+                     VALUES (?, 'password', ?, ?, ?)"
+                );
+                $stmt_log_pass->execute([$userId, $oldHashedPassword, $newHashedPassword, getIpAddress()]);
+
+                $response['success'] = true;
+                $response['message'] = '¡Contraseña actualizada con éxito!';
+
+            } catch (Exception $e) {
+                // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - update-password');
+                    // Comprobación específica por si falta el ENUM 'password'
+                    if (strpos($e->getMessage(), "Data truncated for column 'change_type'") !== false) {
+                        $response['message'] = "Error de BD: Asegúrate de añadir 'password' al ENUM 'change_type' en la tabla 'user_audit_logs'.";
+                    } else {
+                        $response['message'] = 'Error al actualizar la base de datos.';
+                    }
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
+            }
+        }
+
+        // --- ▼▼▼ ¡INICIO DE LA NUEVA ACCIÓN (TOGGLE 2FA)! ▼▼▼ ---
+        elseif ($action === 'toggle-2fa') {
+            try {
+                // 1. Obtener el estado actual
+                $stmt_get = $pdo->prepare("SELECT is_2fa_enabled FROM users WHERE id = ?");
+                $stmt_get->execute([$userId]);
+                $currentState = (int)$stmt_get->fetchColumn();
+
+                // 2. Determinar el nuevo estado (invertirlo)
+                $newState = $currentState === 1 ? 0 : 1;
+
+                // 3. Actualizar la base de datos
+                $stmt_set = $pdo->prepare("UPDATE users SET is_2fa_enabled = ? WHERE id = ?");
+                $stmt_set->execute([$newState, $userId]);
+
+                $response['success'] = true;
+                $response['newState'] = $newState; // Devolvemos el nuevo estado al JS
+                $response['message'] = $newState === 1 
+                    ? 'Verificación de dos pasos activada.' 
+                    : 'Verificación de dos pasos desactivada.';
+
+            } catch (Exception $e) {
+                if ($e instanceof PDOException) {
+                    logDatabaseError($e, 'settings_handler - toggle-2fa');
+                    $response['message'] = 'Error al actualizar la base de datos.';
+                } else {
+                    $response['message'] = $e->getMessage();
+                }
+            }
+        }
+        // --- ▲▲▲ ¡FIN DE LA NUEVA ACCIÓN (TOGGLE 2FA)! ▲▲▲ ---
+
     }
 }
 

@@ -305,6 +305,219 @@ export function initSettingsManager() {
             document.getElementById('email-actions-view').style.display = 'flex';
             return;
         }
+
+        // --- ▼▼▼ INICIO: LÓGICA PARA 2FA MODAL (CORREGIDA) ▼▼▼ ---
+        if (e.target.closest('#2fa-verify-close')) {
+            e.preventDefault();
+            const modal = document.getElementById('2fa-verify-modal');
+            if(modal) modal.style.display = 'none';
+            
+            // IMPORTANTE: Revertir el toggle si se cierra el modal
+            const toggleInput = document.getElementById('2fa-toggle-input');
+            if (toggleInput) {
+                toggleInput.checked = !toggleInput.checked; // Invierte al estado anterior
+            }
+            return;
+        }
+
+        if (e.target.closest('#2fa-verify-continue')) {
+            e.preventDefault();
+            const modal = document.getElementById('2fa-verify-modal');
+            const verifyTrigger = e.target.closest('#2fa-verify-continue');
+            const errorDiv = document.getElementById('2fa-verify-error');
+            const currentPassInput = document.getElementById('2fa-verify-password');
+            const toggleInput = document.getElementById('2fa-toggle-input');
+
+            if (!currentPassInput.value) {
+                if(errorDiv) {
+                    errorDiv.textContent = 'Por favor, introduce tu contraseña actual.';
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+            
+            toggleButtonSpinner(verifyTrigger, 'Confirmar', true);
+            if(errorDiv) errorDiv.style.display = 'none';
+
+            // 1. VERIFICAR CONTRASEÑA
+            const passFormData = new FormData();
+            passFormData.append('action', 'verify-current-password');
+            passFormData.append('current_password', currentPassInput.value);
+
+            const passResult = await callSettingsApi(passFormData);
+
+            if (passResult.success) {
+                // 2. SI LA CONTRASEÑA ES CORRECTA, CAMBIAR EL 2FA
+                const twoFaFormData = new FormData();
+                twoFaFormData.append('action', 'toggle-2fa');
+                
+                const twoFaResult = await callSettingsApi(twoFaFormData);
+
+                if (twoFaResult.success) {
+                    if(modal) modal.style.display = 'none';
+                    window.showAlert(twoFaResult.message, 'success');
+                    
+                    // Actualizar el texto descriptivo
+                    const statusText = document.getElementById('2fa-status-text');
+                    if (statusText) {
+                        statusText.textContent = twoFaResult.newState === 1
+                            ? 'La autenticación de dos pasos está activa.'
+                            : 'Añade una capa extra de seguridad a tu cuenta.';
+                    }
+                } else {
+                    // Error al cambiar 2FA (raro)
+                    if(errorDiv) {
+                        errorDiv.textContent = twoFaResult.message || 'Error al cambiar 2FA.';
+                        errorDiv.style.display = 'block';
+                    }
+                    // Revertir el toggle
+                    if (toggleInput) toggleInput.checked = !toggleInput.checked;
+                }
+                
+            } else {
+                // Contraseña incorrecta
+                if(errorDiv) {
+                    errorDiv.textContent = passResult.message || 'Error al verificar.';
+                    errorDiv.style.display = 'block';
+                }
+                // Revertir el toggle
+                if (toggleInput) toggleInput.checked = !toggleInput.checked;
+            }
+            
+            toggleButtonSpinner(verifyTrigger, 'Confirmar', false);
+            currentPassInput.value = ''; // Limpiar contraseña por seguridad
+            return;
+        }
+        // --- ▲▲▲ FIN: LÓGICA PARA 2FA MODAL (CORREGIDA) ▲▲▲ ---
+
+        // --- ▼▼▼ INICIO: LÓGICA PARA CONTRASEÑA ▼▼▼ ---
+        if (e.target.closest('#password-edit-trigger')) {
+            e.preventDefault();
+            const modal = document.getElementById('password-change-modal');
+            if (!modal) return;
+
+            // Resetear modal al estado inicial
+            modal.querySelector('[data-step="1"]').style.display = 'flex';
+            modal.querySelector('[data-step="2"]').style.display = 'none';
+            
+            modal.querySelector('#password-verify-error').style.display = 'none';
+            modal.querySelector('#password-update-error').style.display = 'none';
+
+            modal.querySelector('#password-verify-current').value = '';
+            modal.querySelector('#password-update-new').value = '';
+            modal.querySelector('#password-update-confirm').value = '';
+            
+            modal.style.display = 'flex';
+            focusInputAndMoveCursorToEnd(modal.querySelector('#password-verify-current'));
+            return;
+        }
+
+        if (e.target.closest('#password-verify-close')) {
+            e.preventDefault();
+            const modal = document.getElementById('password-change-modal');
+            if(modal) modal.style.display = 'none';
+            return;
+        }
+
+        if (e.target.closest('#password-update-back')) {
+            e.preventDefault();
+            const modal = document.getElementById('password-change-modal');
+            if (!modal) return;
+            
+            modal.querySelector('[data-step="1"]').style.display = 'flex';
+            modal.querySelector('[data-step="2"]').style.display = 'none';
+            modal.querySelector('#password-update-error').style.display = 'none';
+            focusInputAndMoveCursorToEnd(modal.querySelector('#password-verify-current'));
+            return;
+        }
+        
+        if (e.target.closest('#password-verify-continue')) {
+            e.preventDefault();
+            const modal = document.getElementById('password-change-modal');
+            const verifyTrigger = e.target.closest('#password-verify-continue');
+            const errorDiv = document.getElementById('password-verify-error');
+            const currentPassInput = document.getElementById('password-verify-current');
+
+            if (!currentPassInput.value) {
+                if(errorDiv) {
+                    errorDiv.textContent = 'Por favor, introduce tu contraseña actual.';
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+            
+            toggleButtonSpinner(verifyTrigger, 'Continuar', true);
+            if(errorDiv) errorDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('action', 'verify-current-password');
+            formData.append('current_password', currentPassInput.value);
+
+            const result = await callSettingsApi(formData);
+
+            if (result.success) {
+                modal.querySelector('[data-step="1"]').style.display = 'none';
+                modal.querySelector('[data-step="2"]').style.display = 'flex';
+                focusInputAndMoveCursorToEnd(modal.querySelector('#password-update-new'));
+            } else {
+                if(errorDiv) {
+                    errorDiv.textContent = result.message || 'Error al verificar.';
+                    errorDiv.style.display = 'block';
+                }
+            }
+            
+            toggleButtonSpinner(verifyTrigger, 'Continuar', false);
+            return;
+        }
+
+        if (e.target.closest('#password-update-save')) {
+            e.preventDefault();
+            const modal = document.getElementById('password-change-modal');
+            const saveTrigger = e.target.closest('#password-update-save');
+            const errorDiv = document.getElementById('password-update-error');
+            const newPassInput = document.getElementById('password-update-new');
+            const confirmPassInput = document.getElementById('password-update-confirm');
+
+            // Validación de cliente
+            if (newPassInput.value.length < 8) {
+                if(errorDiv) {
+                    errorDiv.textContent = 'La nueva contraseña debe tener al menos 8 caracteres.';
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+            if (newPassInput.value !== confirmPassInput.value) {
+                if(errorDiv) {
+                    errorDiv.textContent = 'Las nuevas contraseñas no coinciden.';
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            toggleButtonSpinner(saveTrigger, 'Guardar Contraseña', true);
+            if(errorDiv) errorDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('action', 'update-password');
+            formData.append('new_password', newPassInput.value);
+            formData.append('confirm_password', confirmPassInput.value);
+
+            const result = await callSettingsApi(formData);
+
+            if (result.success) {
+                if(modal) modal.style.display = 'none';
+                window.showAlert(result.message || 'Contraseña actualizada.', 'success');
+            } else {
+                if(errorDiv) {
+                    errorDiv.textContent = result.message || 'Error al guardar.';
+                    errorDiv.style.display = 'block';
+                }
+            }
+            
+            toggleButtonSpinner(saveTrigger, 'Guardar Contraseña', false);
+            return;
+        }
+        // --- ▲▲▲ FIN: LÓGICA PARA CONTRASEÑA ▲▲▲ ---
     });
 
     // 2. Delegación para SUBMIT
@@ -451,6 +664,42 @@ export function initSettingsManager() {
             document.getElementById('avatar-actions-custom').style.display = 'none';
             document.getElementById('avatar-actions-preview').style.display = 'flex';
         }
+
+        // --- ▼▼▼ ¡INICIO DE LA NUEVA LÓGICA (TOGGLE 2FA)! ▼▼▼ ---
+        if (e.target.id === '2fa-toggle-input') {
+            const modal = document.getElementById('2fa-verify-modal');
+            const toggleInput = e.target;
+            
+            if (!modal) {
+                window.showAlert('Error: No se encontró el modal de verificación.', 'error');
+                toggleInput.checked = !toggleInput.checked; // Revertir
+                return;
+            }
+
+            // Resetear y mostrar el modal
+            const modalTitle = document.getElementById('2fa-modal-title');
+            const modalText = document.getElementById('2fa-modal-text');
+            const errorDiv = document.getElementById('2fa-verify-error');
+            const passInput = document.getElementById('2fa-verify-password');
+
+            if (toggleInput.checked) {
+                // El usuario está ACTIVANDO
+                if(modalTitle) modalTitle.textContent = 'Activar Verificación de dos pasos';
+                if(modalText) modalText.textContent = 'Para activar esta función, por favor ingresa tu contraseña actual.';
+            } else {
+                // El usuario está DESACTIVANDO
+                if(modalTitle) modalTitle.textContent = 'Desactivar Verificación de dos pasos';
+                if(modalText) modalText.textContent = 'Para desactivar esta función, por favor ingresa tu contraseña actual.';
+            }
+
+            if(errorDiv) errorDiv.style.display = 'none';
+            if(passInput) passInput.value = '';
+
+            modal.style.display = 'flex';
+            focusInputAndMoveCursorToEnd(passInput);
+        }
+        // --- ▲▲▲ ¡FIN DE LA NUEVA LÓGICA (TOGGLE 2FA)! ▲▲▲ ---
+
     });
     
     // 4. Guardar la URL original
