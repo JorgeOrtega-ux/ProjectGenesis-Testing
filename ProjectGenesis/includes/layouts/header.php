@@ -14,7 +14,7 @@ if (empty($profileImageUrl)) {
 }
 
 // --- MODIFICACIÓN: Obtener username para el ALT text ---
-$usernameForAlt = $_SESSION['username'] ?? 'Usuario';
+$usernameForAlt = $_SESSION['username'] ?? __('router.defaultUsername');
 
 // --- ¡NUEVO BLOQUE PARA EL ROL! ---
 // Obtenemos el rol de la sesión, si no existe, 'user' por defecto
@@ -38,7 +38,7 @@ $userRole = $_SESSION['role'] ?? 'user';
                  data-role="<?php echo htmlspecialchars($userRole); ?>"> 
                  
                  <img src="<?php echo htmlspecialchars($profileImageUrl); ?>" 
-                      alt="Avatar de <?php echo htmlspecialchars($usernameForAlt); ?>"
+                      alt="<?php echo htmlspecialchars(__('header.avatarAlt', ['username' => $usernameForAlt])); ?>"
                       class="header-profile-image">
             </div>
             </div>
@@ -52,7 +52,7 @@ $userRole = $_SESSION['role'] ?? 'user';
                         <span class="material-symbols-rounded">settings</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Configuracion</span>
+                        <span><?php echo __('header.menu.settings'); ?></span>
                     </div>
                 </div>
                 <div class="menu-link">
@@ -60,7 +60,7 @@ $userRole = $_SESSION['role'] ?? 'user';
                         <span class="material-symbols-rounded">help</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Ayuda y comentarios</span>
+                        <span><?php echo __('header.menu.help'); ?></span>
                     </div>
                 </div>
                 
@@ -69,7 +69,7 @@ $userRole = $_SESSION['role'] ?? 'user';
                         <span class="material-symbols-rounded">logout</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Cerrar sesion</span>
+                        <span><?php echo __('header.menu.logout'); ?></span>
                     </div>
                     </div>
                 </div>

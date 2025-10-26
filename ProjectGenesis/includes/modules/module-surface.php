@@ -1,3 +1,6 @@
+<?php
+// FILE: jorgeortega-ux/projectgenesis/ProjectGenesis-98418948306e47bc505f1797114031c3351b5e33/ProjectGenesis/includes/modules/module-surface.php
+?>
 <div class="module-content module-surface body-title disabled" data-module="moduleSurface">
     <div class="menu-content">
         <div class="menu-list">
@@ -11,7 +14,7 @@
                         <span class="material-symbols-rounded">arrow_back</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Volver a Inicio</span>
+                        <span><?php echo __('sidebar.settings.backToHome'); ?></span>
                     </div>
                 </div>
                 
@@ -20,7 +23,7 @@
                         <span class="material-symbols-rounded">account_circle</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Tu Perfil</span>
+                        <span><?php echo __('sidebar.settings.profile'); ?></span>
                     </div>
                 </div>
 
@@ -29,24 +32,16 @@
                         <span class="material-symbols-rounded">security</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Inicio de Sesión y Seguridad</span>
+                        <span><?php echo __('sidebar.settings.login'); ?></span>
                     </div>
                 </div>
 
-                <div class="menu-link" data-action="toggleSectionSettingsDevices">
-                    <div class="menu-link-icon">
-                        <span class="material-symbols-rounded">devices</span>
-                    </div>
-                    <div class="menu-link-text">
-                        <span>Sesiones de Dispositivos</span>
-                    </div>
-                </div>
                 <div class="menu-link" data-action="toggleSectionSettingsAccess">
                     <div class="menu-link-icon">
                         <span class="material-symbols-rounded">accessibility</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Accesibilidad</span>
+                        <span><?php echo __('sidebar.settings.accessibility'); ?></span>
                     </div>
                 </div>
                 <?php else: ?>
@@ -56,7 +51,7 @@
                         <span class="material-symbols-rounded">home</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Pagina principal</span>
+                        <span><?php echo __('sidebar.main.home'); ?></span>
                     </div>
                 </div>
                 
@@ -65,7 +60,7 @@
                         <span class="material-symbols-rounded">groups</span>
                     </div>
                     <div class="menu-link-text">
-                        <span>Explorar comunidades</span>
+                        <span><?php echo __('sidebar.main.explorer'); ?></span>
                     </div>
                 </div>
                 <?php endif; ?>

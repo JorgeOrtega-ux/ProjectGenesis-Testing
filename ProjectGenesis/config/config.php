@@ -7,7 +7,6 @@
 ini_set('session.use_only_cookies', 1);
 
 // 2. Cookie HttpOnly (previene acceso por JavaScript - XSS)
-// Esta es la línea clave que soluciona el problema que mencionaste.
 ini_set('session.cookie_httponly', 1);
 
 // 3. Cookie Secure (solo enviar sobre HTTPS)
@@ -31,6 +30,127 @@ session_start();
 // Esto soluciona los problemas de expiración de códigos.
 date_default_timezone_set('UTC');
 // --- FIN DE LA CORRECCIÓN ---
+
+// ======================================
+// === ▼▼▼ I18N (Traducciones) ▼▼▼ ===
+// ======================================
+
+/**
+ * @var array Contenedor global de traducciones
+ */
+$translations = [];
+
+/**
+ * Obtiene la preferencia de idioma del navegador.
+ * (Movido desde auth_handler.php)
+ * @param string $acceptLanguage El string HTTP_ACCEPT_LANGUAGE.
+ * @return string El código de idioma preferido (ej. 'es-419').
+ */
+function getPreferredLanguage($acceptLanguage) {
+    $supportedLanguages = [
+        'en-us' => 'en-us',
+        'es-mx' => 'es-mx',
+        'es-419' => 'es-419', // Usando es-419
+        'fr-fr' => 'fr-fr'
+    ];
+    
+    $primaryLanguageMap = [
+        'es' => 'es-419', // Default 'es' a es-419
+        'en' => 'en-us',
+        'fr' => 'fr-fr'
+    ];
+    
+    $defaultLanguage = 'es-419'; // Default base
+
+    if (empty($acceptLanguage)) {
+        return $defaultLanguage;
+    }
+
+    $langs = [];
+    preg_match_all('/([a-z]{1,8}(-[a-z]{1,8})?)\s*(;\s*q\s*=\s*(1|0\.[0-9]+))?/i', $acceptLanguage, $matches);
+
+    if (!empty($matches[1])) {
+        $langs = array_map('strtolower', $matches[1]);
+    }
+
+    $primaryMatch = null;
+    foreach ($langs as $lang) {
+        if (isset($supportedLanguages[$lang])) {
+            return $supportedLanguages[$lang];
+        }
+        
+        $primary = substr($lang, 0, 2);
+        if ($primaryMatch === null && isset($primaryLanguageMap[$primary])) {
+            $primaryMatch = $primaryLanguageMap[$primary];
+        }
+    }
+    
+    return $primaryMatch ?? $defaultLanguage;
+}
+
+
+/**
+ * Carga el archivo de traducción basado en el código de idioma.
+ * Asume que los archivos están en /translations/es-419.json
+ * @param string $langCode Código de idioma (ej. 'es-419', 'en-us')
+ * @return array Las traducciones cargadas.
+ */
+function loadTranslations($langCode) {
+    // El usuario solicitó 'es-419' como el único por ahora
+    $defaultLangCode = 'es-419'; 
+    $filePath = dirname(__DIR__) . '/translations/' . $langCode . '.json';
+
+    if (!file_exists($filePath)) {
+        // Si el idioma solicitado no existe, intenta cargar el por defecto
+        $filePath = dirname(__DIR__) . '/translations/' . $defaultLangCode . '.json';
+        if (!file_exists($filePath)) {
+            // Si ni siquiera el por defecto existe, retorna un array vacío
+            return []; 
+        }
+    }
+
+    $jsonContent = @file_get_contents($filePath);
+    $decodedJson = json_decode($jsonContent, true);
+
+    return (json_last_error() === JSON_ERROR_NONE) ? $decodedJson : [];
+}
+
+/**
+ * Obtiene un string de traducción por su clave.
+ * @param string $key La clave de traducción (ej. 'auth.login.title')
+ * @param array $replacements Un array asociativo de valores a reemplazar (ej. ['username' => 'John'])
+ * @return string El string traducido o la clave si no se encuentra.
+ */
+function __($key, $replacements = []) {
+    // Usa $GLOBALS para acceder a la variable definida fuera del scope
+    $translation = $GLOBALS['translations'][$key] ?? $key;
+    
+    if (!empty($replacements) && is_array($replacements)) {
+        foreach ($replacements as $placeholder => $value) {
+            // Reemplaza placeholders con formato :placeholder
+            $translation = str_replace(':' . $placeholder, $value, $translation);
+        }
+    }
+    
+    return $translation;
+}
+
+// --- Determinar qué idioma cargar ---
+
+// 1. Usar el idioma de la sesión si existe (establecido por el usuario en 'settings')
+$langToLoad = $_SESSION['language'] ?? null;
+
+// 2. Si no está en la sesión, detectar del navegador
+if (empty($langToLoad)) {
+    $langToLoad = getPreferredLanguage($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'es-419');
+}
+
+// 3. Cargar las traducciones globalmente
+$translations = loadTranslations($langToLoad);
+
+// ======================================
+// === ▲▲▲ FIN I18N (Traducciones) ▲▲▲ ===
+// ======================================
 
 
 // 2. CONFIGURACIÓN DE LA BASE DE DATOS
@@ -59,7 +179,8 @@ try {
     // --- ▼▼▼ MODIFICACIÓN DE SEGURIDAD (LOG) ▼▼▼ ---
     // En lugar de exponer el error, lo guardamos en un log y mostramos un error genérico.
     logDatabaseError($e, 'PDO Connection');
-    die("ERROR: No se pudo conectar a la base de datos. Por favor, contacta al administrador.");
+    // Usamos la función de traducción __() que acabamos de definir
+    die(__("config.dbError"));
     // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
 }
 

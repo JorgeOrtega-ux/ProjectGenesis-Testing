@@ -1,6 +1,7 @@
-/* ====================================== */
-/* ======== MAIN-CONTROLLER.JS ========== */
-/* ====================================== */
+// --- ▼▼▼ ¡MODIFICADO! Importar la función de traducción ▼▼▼ ---
+import { __ } from './auth-manager.js';
+// --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
+
 export const deactivateAllModules = (exceptionModule = null) => {
     document.querySelectorAll('[data-module].active').forEach(activeModule => {
         if (activeModule !== exceptionModule) {
@@ -15,21 +16,16 @@ export function initMainController() {
     let closeOnClickOutside = true;
     let closeOnEscape = true;
 
-    // --- ▼▼▼ MODIFICACIÓN: Usar event delegation en document.body ▼▼▼ ---
-    // Esto escucha clics en CUALQUIER [data-action], incluso los cargados después.
     document.body.addEventListener('click', async function (event) {
         
-        // Encontrar el [data-action] más cercano al que se hizo clic
         const button = event.target.closest('[data-action]');
         
-        // Si no se hizo clic en un [data-action], no hacer nada
         if (!button) {
             return;
         }
 
         const action = button.getAttribute('data-action');
 
-        // --- Lógica de Logout ---
         if (action === 'logout') {
             event.preventDefault();
             const logoutButton = button; 
@@ -57,7 +53,9 @@ export function initMainController() {
                             resolve(true);
                         } else {
                             console.log('Verificación: Sin conexión.');
-                            reject(new Error('No hay conexión a internet.'));
+                            // --- ▼▼▼ ¡MODIFICADO! Usar traducción ▼▼▼ ---
+                            reject(new Error(__('js.logout.error.network')));
+                            // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
                         }
                     }, 800);
                 });
@@ -83,7 +81,9 @@ export function initMainController() {
                 window.location.href = `${logoutUrl}?csrf_token=${encodeURIComponent(token)}`;
                 
             } catch (error) {
-                alert(`Error al cerrar sesión: ${error.message || 'Error desconocido'}`);
+                // --- ▼▼▼ ¡MODIFICADO! Usar traducción ▼▼▼ ---
+                alert(__('js.logout.error.generic', {error: (error.message || __('js.error.unknown'))}));
+                // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
             
             } finally {
 
@@ -94,20 +94,17 @@ export function initMainController() {
             return;
         }
         
-        // --- Ignorar acciones de navegación (manejadas por url-manager.js) ---
         if (action.startsWith('toggleSection')) {
             return; 
         }
 
-        // --- Ignorar clics en los links del selector (manejados por settings-manager.js) ---
         const isSelectorLink = event.target.closest('[data-module="moduleTriggerSelect"] .menu-link');
         if (isSelectorLink) {
             return;
         }
 
-        // --- Lógica para Toggles de Módulos (ej. toggleModuleSelect, toggleModuleTriggerSelect) ---
         if (action.startsWith('toggle')) {
-            event.stopPropagation(); // Prevenir que el 'click outside' lo cierre
+            event.stopPropagation(); 
             
             let moduleName = action.substring(6); 
             moduleName = moduleName.charAt(0).toLowerCase() + moduleName.slice(1);
@@ -126,14 +123,10 @@ export function initMainController() {
             }
         }
     });
-    // --- ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲ ---
 
 
     if (closeOnClickOutside) {
         document.addEventListener('click', function (event) {
-            // Esta lógica SÍ debe estar separada.
-            // Primero, el listener de arriba (delegado) abre el módulo.
-            // Este listener (en document) cierra módulos si se hace clic fuera.
             const clickedOnModule = event.target.closest('[data-module].active');
             const clickedOnButton = event.target.closest('[data-action]');
 

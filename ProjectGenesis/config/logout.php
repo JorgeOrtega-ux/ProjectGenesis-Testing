@@ -1,7 +1,7 @@
 <?php
 // /ProjectGenesis/logout.php
 
-// Incluimos config.php para tener $basePath y session_start()
+// Incluimos config.php para tener $basePath y session_start() y __()
 include 'config.php'; 
 
 // --- ¡NUEVA MODIFICACIÓN! Validar token CSRF ---
@@ -11,7 +11,7 @@ $submittedToken = $_GET['csrf_token'] ?? '';
 if (!validateCsrfToken($submittedToken)) {
     // Si el token no es válido, simplemente morimos o redirigimos.
     // Esto previene que un sitio malicioso cierre la sesión del usuario.
-    die('Error de seguridad. Token inválido.');
+    die(__('logout.sessionExpired'));
 }
 // --- FIN DE LA MODIFICACIÓN ---
 

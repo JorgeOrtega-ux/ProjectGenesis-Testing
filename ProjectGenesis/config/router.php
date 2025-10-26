@@ -2,7 +2,7 @@
 // /ProjectGenesis/config/router.php
 
 // --- MODIFICACIÓN 1: INCLUIR CONFIG ---
-include '../config/config.php'; // Inicia la sesión
+include '../config/config.php'; // Inicia la sesión y carga __()
 
 // --- ▼▼▼ INICIO: NUEVA FUNCIÓN DE ERROR DE REGISTRO ▼▼▼ ---
 /**
@@ -27,7 +27,7 @@ function showRegistrationError($basePath, $message, $details) {
     // Cargamos los CSS existentes para mantener el estilo
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded">';
     echo '<link rel="stylesheet" type="text/css" href="' . htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8') . '/assets/css/styles.css">';
-    echo '<title>Error en el registro</title></head>';
+    echo '<title>' . __('router.regError.title') . '</title></head>';
     echo '<body style="background-color: #f5f5fa;">'; // Fondo gris como el resto
     
     // Usamos las clases CSS de 'auth-container' y 'not-found' para el estilo
@@ -35,7 +35,7 @@ function showRegistrationError($basePath, $message, $details) {
     echo '<div class="auth-container" style="max-width: 460px;">';
     
     // Título (similar a tu imagen)
-    echo '<h1 class="auth-title" style="font-size: 36px; margin-bottom: 16px;">¡Uy! Faltan datos.</h1>';
+    echo '<h1 class="auth-title" style="font-size: 36px; margin-bottom: 16px;">' . __('router.error.oops') . '</h1>';
     
     // Contenedor del error (similar a tu imagen)
     echo '<div class="auth-error-message" style="display: block; background-color: #ffffff; border: 1px solid #00000020; color: #1f2937; margin-bottom: 24px; text-align: left; padding: 16px;">';
@@ -44,7 +44,7 @@ function showRegistrationError($basePath, $message, $details) {
     echo '</div>';
     
     // Botón para volver
-    echo '<a href="' . htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8') . '/register" class="auth-button" style="text-decoration: none; text-align: center; line-height: 52px; display: block; width: 100%;">Volver al inicio del registro</a>';
+    echo '<a href="' . htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8') . '/register" class="auth-button" style="text-decoration: none; text-align: center; line-height: 52px; display: block; width: 100%;">' . __('router.regError.button') . '</a>';
     
     echo '</div></div>';
     echo '</body></html>';
@@ -66,16 +66,16 @@ function showResetError($basePath, $message, $details) {
     echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=deVice-width, initial-scale=1.0">';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded">';
     echo '<link rel="stylesheet" type="text/css" href="' . htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8') . '/assets/css/styles.css">';
-    echo '<title>Error en la recuperación</title></head>';
+    echo '<title>' . __('router.resetError.title') . '</title></head>';
     echo '<body style="background-color: #f5f5fa;">';
     echo '<div class="section-content active" style="align-items: center; justify-content: center; height: 100vh;">';
     echo '<div class="auth-container" style="max-width: 460px;">';
-    echo '<h1 class="auth-title" style="font-size: 36px; margin-bottom: 16px;">¡Uy! Faltan datos.</h1>';
+    echo '<h1 class="auth-title" style="font-size: 36px; margin-bottom: 16px;">' . __('router.error.oops') . '</h1>';
     echo '<div class="auth-error-message" style="display: block; background-color: #ffffff; border: 1px solid #00000020; color: #1f2937; margin-bottom: 24px; text-align: left; padding: 16px;">';
     echo '<strong style="display: block; font-size: 16px; margin-bottom: 8px; color: #000;">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</strong>';
     echo '<p style="font-size: 14px; margin: 0; color: #6b7280; line-height: 1.5;">' . htmlspecialchars($details, ENT_QUOTES, 'UTF-8') . '</p>';
     echo '</div>';
-    echo '<a href="' . htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8') . '/reset-password" class="auth-button" style="text-decoration: none; text-align: center; line-height: 52px; display: block; width: 100%;">Volver al inicio de la recuperación</a>';
+    echo '<a href="' . htmlspecialchars($basePath, ENT_QUOTES, 'UTF-8') . '/reset-password" class="auth-button" style="text-decoration: none; text-align: center; line-height: 52px; display: block; width: 100%;">' . __('router.resetError.button') . '</a>';
     echo '</div></div>';
     echo '</body></html>';
 }
@@ -141,14 +141,14 @@ if (array_key_exists($page, $allowedPages)) {
 
     } elseif ($page === 'register-step2') {
         if (!isset($_SESSION['registration_step']) || $_SESSION['registration_step'] < 2) {
-            showRegistrationError($basePath, 'Error 400: Faltan datos del paso 1.', 'No has completado el paso 1 (email y contraseña) antes de acceder a esta página.');
+            showRegistrationError($basePath, __('router.regError.step1.title'), __('router.regError.step1.details'));
             exit; 
         }
         $CURRENT_REGISTER_STEP = 2;
 
     } elseif ($page === 'register-step3') {
         if (!isset($_SESSION['registration_step']) || $_SESSION['registration_step'] < 3) {
-            showRegistrationError($basePath, 'Error 400: Faltan datos del paso 2.', 'No has completado el paso 2 (nombre de usuario) antes de acceder a esta página.');
+            showRegistrationError($basePath, __('router.regError.step2.title'), __('router.regError.step2.details'));
             exit;
         }
         $CURRENT_REGISTER_STEP = 3;
@@ -188,14 +188,14 @@ if (array_key_exists($page, $allowedPages)) {
 
     } elseif ($page === 'reset-step2') {
         if (!isset($_SESSION['reset_step']) || $_SESSION['reset_step'] < 2) {
-            showResetError($basePath, 'Error 400: Faltan datos del paso 1.', 'No has completado el paso 1 (email) antes de acceder a esta página.');
+            showResetError($basePath, __('router.resetError.step1.title'), __('router.resetError.step1.details'));
             exit;
         }
         $CURRENT_RESET_STEP = 2;
 
     } elseif ($page === 'reset-step3') {
         if (!isset($_SESSION['reset_step']) || $_SESSION['reset_step'] < 3) {
-            showResetError($basePath, 'Error 400: Faltan datos del paso 2.', 'No has completado el paso 2 (código) antes de acceder a esta página.');
+            showResetError($basePath, __('router.resetError.step2.title'), __('router.resetError.step2.details'));
             exit;
         }
         $CURRENT_RESET_STEP = 3;
@@ -209,12 +209,12 @@ if (array_key_exists($page, $allowedPages)) {
         $profileImageUrl = $_SESSION['profile_image_url'] ?? $defaultAvatar;
         if (empty($profileImageUrl)) $profileImageUrl = $defaultAvatar;
         $isDefaultAvatar = strpos($profileImageUrl, 'ui-avatars.com') !== false || strpos($profileImageUrl, 'user-' . $_SESSION['user_id'] . '.png') !== false;
-        $usernameForAlt = $_SESSION['username'] ?? 'Usuario';
+        $usernameForAlt = $_SESSION['username'] ?? __('router.defaultUsername');
         $userRole = $_SESSION['role'] ?? 'user';
         $userEmail = $_SESSION['email'] ?? 'correo@ejemplo.com';
         
         // --- ▼▼▼ ¡INICIO DE MODIFICACIÓN: LEER PREFS DE SESIÓN! ▼▼▼ ---
-        $userLanguage = $_SESSION['language'] ?? 'en-us';
+        $userLanguage = $_SESSION['language'] ?? 'es-419';
         $userUsageType = $_SESSION['usage_type'] ?? 'personal';
         $openLinksInNewTab = (int)($_SESSION['open_links_in_new_tab'] ?? 1); 
         // --- ▲▲▲ ¡FIN DE MODIFICACIÓN! ▲▲▲ ---
@@ -226,16 +226,23 @@ if (array_key_exists($page, $allowedPages)) {
             $lastLog = $stmt_pass_log->fetch();
 
             if ($lastLog) {
+                // Determinar el locale basado en el idioma de la sesión
+                $sessionLang = $_SESSION['language'] ?? 'es-419';
+                $locale = 'es_ES'; // Default
+                if ($sessionLang === 'en-us') $locale = 'en_US';
+                if ($sessionLang === 'fr-fr') $locale = 'fr_FR';
+                if ($sessionLang === 'es-mx') $locale = 'es_MX';
+
                 if (!class_exists('IntlDateFormatter')) {
                     $date = new DateTime($lastLog['changed_at']);
-                    $lastPasswordUpdateText = 'Última actualización: ' . $date->format('d/m/Y');
+                    $lastPasswordUpdateText = __('settings.login.lastUpdatePrefix') . $date->format('d/m/Y');
                 } else {
-                    $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::LONG, IntlDateFormatter::NONE, 'UTC');
+                    $formatter = new IntlDateFormatter($locale, IntlDateFormatter::LONG, IntlDateFormatter::NONE, 'UTC');
                     $timestamp = strtotime($lastLog['changed_at']);
-                    $lastPasswordUpdateText = 'Última actualización: ' . $formatter->format($timestamp);
+                    $lastPasswordUpdateText = __('settings.login.lastUpdatePrefix') . $formatter->format($timestamp);
                 }
             } else {
-                $lastPasswordUpdateText = 'Nunca se ha actualizado la contraseña.';
+                $lastPasswordUpdateText = __('settings.login.passwordNeverUpdated');
             }
 
             $stmt_2fa = $pdo->prepare("SELECT is_2fa_enabled FROM users WHERE id = ?");
@@ -243,7 +250,7 @@ if (array_key_exists($page, $allowedPages)) {
             $is2faEnabled = (int)$stmt_2fa->fetchColumn(); 
         } catch (PDOException $e) {
             logDatabaseError($e, 'router - settings-login');
-            $lastPasswordUpdateText = 'No se pudo cargar el historial de actualizaciones.';
+            $lastPasswordUpdateText = __('settings.login.error.history');
             $is2faEnabled = 0; 
         }
     } elseif ($page === 'settings-accessibility') {

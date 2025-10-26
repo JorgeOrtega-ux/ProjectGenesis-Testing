@@ -1,13 +1,13 @@
 <?php
-// FILE: jorgeortega-ux/projectgenesis/ProjectGenesis-c8c3cdea53b7f937c4b912cae7954b420a451beb/ProjectGenesis/includes/sections/settings/login-security.php
+// FILE: jorgeortega-ux/projectgenesis/ProjectGenesis-98418948306e47bc505f1797114031c3351b5e33/ProjectGenesis/includes/sections/settings/login-security.php
 ?>
 <div class="section-content <?php echo ($CURRENT_SECTION === 'settings-login') ? 'active' : 'disabled'; ?>" data-section="settings-login">
     <div class="settings-wrapper">
 
         <div class="settings-header-card">
-            <h1 class="settings-title">Inicio de Sesión y Seguridad</h1>
+            <h1 class="settings-title"><?php echo __('settings.login.title'); ?></h1>
             <p class="settings-description">
-                Gestiona tu contraseña, activa la verificación de dos pasos (2FA) y revisa tu historial de inicio de sesión.
+                <?php echo __('settings.login.description'); ?>
             </p>
         </div>
 
@@ -17,7 +17,7 @@
                     <span class="material-symbols-rounded">lock</span>
                 </div>
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Contraseña</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.login.password.label'); ?></h2>
 
                     <p class="settings-text-description">
                         <?php
@@ -30,7 +30,7 @@
 
             <div class="settings-card-right">
                 <div class="settings-card-right-actions">
-                    <button type="button" class="settings-button" id="password-edit-trigger">Actualizar</button>
+                    <button type="button" class="settings-button" id="password-edit-trigger"><?php echo __('settings.login.password.button'); ?></button>
                 </div>
             </div>
         </div>
@@ -41,11 +41,11 @@
                     <span class="material-symbols-rounded">shield_lock</span>
                 </div>
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Verificación de dos pasos (2FA)</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.login.2fa.label'); ?></h2>
                     <p class="settings-text-description" id="tfa-status-text">
                         <?php
                         // $is2faEnabled viene de config/router.php
-                        echo $is2faEnabled ? 'La autenticación de dos pasos está activa.' : 'Añade una capa extra de seguridad a tu cuenta.';
+                        echo $is2faEnabled ? __('settings.login.2fa.descriptionEnabled') : __('settings.login.2fa.descriptionDisabled');
                         ?>
                     </p>
                 </div>
@@ -57,31 +57,31 @@
                             class="settings-button <?php echo $is2faEnabled ? 'danger' : ''; ?>" 
                             id="tfa-toggle-button"
                             data-is-enabled="<?php echo $is2faEnabled ? '1' : '0'; ?>">
-                        <?php echo $is2faEnabled ? 'Deshabilitar' : 'Habilitar'; ?>
+                        <?php echo $is2faEnabled ? __('settings.login.2fa.buttonDisable') : __('settings.login.2fa.buttonEnable'); ?>
                     </button>
                     </div>
             </div>
         </div>
 
-        <div class="settings-card">
+        <div class="settings-card settings-card-column">
             <div class="settings-card-left">
                 <div class="settings-card-icon">
                     <span class="material-symbols-rounded">devices</span>
                 </div>
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Sesiones de dispositivos</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.login.devices.label'); ?></h2>
                     <p class="settings-text-description">
-                        Revisa y administra los dispositivos donde has iniciado sesión.
+                        <?php echo __('settings.login.devices.description'); ?>
                     </p>
                 </div>
             </div>
             
-            <div class="settings-card-right">
+            <div class="settings-card-bottom">
                 <div class="settings-card-right-actions">
                     <button type="button" 
                             class="settings-button" 
                             data-action="toggleSectionSettingsDevices"> 
-                            Administrar dispositivos
+                            <?php echo __('settings.login.devices.button'); ?>
                     </button>
                 </div>
             </div>
@@ -89,15 +89,15 @@
         <div class="settings-card settings-card-column settings-card-danger">
             
             <div class="settings-text-content">
-                <h2 class="settings-text-title">Eliminar tu cuenta</h2>
+                <h2 class="settings-text-title"><?php echo __('settings.login.deleteAccount.label'); ?></h2>
                 <p class="settings-text-description">
-                    Si eliminas tu cuenta, ya no podrás acceder a ninguno de tus diseños ni iniciar sesión.
+                    <?php echo __('settings.login.deleteAccount.description'); ?>
                 </p>
             </div>
             
             <div class="settings-card-bottom">
                 <div class="settings-card-right-actions">
-                    <button type="button" class="settings-button danger">Eliminar cuenta</button>
+                    <button type="button" class="settings-button danger"><?php echo __('settings.login.deleteAccount.button'); ?></button>
                 </div>
             </div>
         </div>
@@ -114,44 +114,44 @@
             <form class="auth-form" onsubmit="event.preventDefault();" novalidate>
 
                 <fieldset class="auth-step active" data-step="1">
-                    <h2 class="auth-title">Verifica tu identidad</h2>
+                    <h2 class="auth-title"><?php echo __('settings.password.modal.step1.title'); ?></h2>
                     <p class="auth-verification-text">
-                        Para continuar, por favor ingresa tu contraseña actual.
+                        <?php echo __('settings.password.modal.step1.message'); ?>
                     </p>
 
                     <div class="auth-error-message" id="password-verify-error" style="display: none;"></div>
 
                     <div class="auth-input-group">
                         <input type="password" id="password-verify-current" name="current_password" required placeholder=" ">
-                        <label for="password-verify-current">Contraseña actual*</label>
+                        <label for="password-verify-current"><?php echo __('settings.password.modal.step1.label'); ?>*</label>
                     </div>
 
                     <div class="auth-step-buttons">
-                        <button type="button" class="auth-button" id="password-verify-continue">Continuar</button>
+                        <button type="button" class="auth-button" id="password-verify-continue"><?php echo __('auth.form.button.continue'); ?></button>
                     </div>
                 </fieldset>
 
                 <fieldset class="auth-step" data-step="2" style="display: none;">
-                    <h2 class="auth-title">Crea una nueva contraseña</h2>
+                    <h2 class="auth-title"><?php echo __('settings.password.modal.step2.title'); ?></h2>
                     <p class="auth-verification-text">
-                        Tu nueva contraseña debe tener al menos 8 caracteres.
+                        <?php echo __('settings.password.modal.step2.message'); ?>
                     </p>
 
                     <div class="auth-error-message" id="password-update-error"></div>
 
                     <div class="auth-input-group">
-                        <input type="password" id="password-update-new" name="new_password" required placeholder=" ">
-                        <label for="password-update-new">Nueva contraseña*</label>
+                        <input type="password" id="password-update-new" name="new_password" required placeholder=" " minlength="8" maxlength="72">
+                        <label for="password-update-new"><?php echo __('settings.password.modal.step2.labelNew'); ?>*</label>
                     </div>
 
                     <div class="auth-input-group">
-                        <input type="password" id="password-update-confirm" name="confirm_password" required placeholder=" ">
-                        <label for="password-update-confirm">Confirmar nueva contraseña*</label>
+                        <input type="password" id="password-update-confirm" name="confirm_password" required placeholder=" " minlength="8" maxlength="72">
+                        <label for="password-update-confirm"><?php echo __('settings.password.modal.step2.labelConfirm'); ?>*</label>
                     </div>
 
                     <div class="auth-step-buttons">
-                        <button type="button" class="auth-button-back" id="password-update-back">Atrás</button>
-                        <button type="button" class="auth-button" id="password-update-save">Guardar Contraseña</button>
+                        <button type="button" class="auth-button-back" id="password-update-back"><?php echo __('auth.form.button.back'); ?></button>
+                        <button type="button" class="auth-button" id="password-update-save"><?php echo __('settings.button.save'); ?></button>
                     </div>
                 </fieldset>
 
@@ -166,17 +166,17 @@
         <div class="settings-modal-content">
             <form class="auth-form" onsubmit="event.preventDefault();" novalidate>
                 <fieldset class="auth-step active">
-                    <h2 class="auth-title" id="tfa-modal-title">Verifica tu identidad</h2>
-                    <p class="auth-verification-text" id="tfa-modal-text">
-                        Para continuar, por favor ingresa tu contraseña actual.
+                    <h2 class="auth-title" id="tfa-modal-title"><?php echo __('settings.2fa.modal.title'); ?></h2>
+                    <p class_id="tfa-modal-text">
+                        <?php echo __('settings.2fa.modal.message'); ?>
                     </p>
                     <div class="auth-error-message" id="tfa-verify-error" style="display: none;"></div>
                     <div class="auth-input-group">
                         <input type="password" id="tfa-verify-password" name="current_password" required placeholder=" ">
-                        <label for="tfa-verify-password">Contraseña actual*</label>
+                        <label for="tfa-verify-password"><?php echo __('settings.password.modal.step1.label'); ?>*</label>
                     </div>
                     <div class="auth-step-buttons">
-                        <button type="button" class="auth-button" id="tfa-verify-continue">Confirmar</button>
+                        <button type="button" class="auth-button" id="tfa-verify-continue"><?php echo __('settings.2fa.modal.button'); ?></button>
                     </div>
                 </fieldset>
             </form>
@@ -184,3 +184,4 @@
     </div>
 
     </div>
+</div>

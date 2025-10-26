@@ -6,23 +6,33 @@
 
 // 1. Definir los mapas de valores de BD a texto legible
 $usageMap = [
-    'personal' => 'Uso personal',
-    'student' => 'Estudiante',
-    'teacher' => 'Docente',
-    'small_business' => 'Empresa pequeña',
-    'large_company' => 'Empresa grande'
+    'personal' => __('settings.profile.usage.personal'),
+    'student' => __('settings.profile.usage.student'),
+    'teacher' => __('settings.profile.usage.teacher'),
+    'small_business' => __('settings.profile.usage.small_business'),
+    'large_company' => __('settings.profile.usage.large_company')
+];
+
+// --- ¡NUEVO MAPA DE ICONOS AÑADIDO! ---
+$usageIconMap = [
+    'personal' => 'person',
+    'student' => 'school',
+    'teacher' => 'history_edu',
+    'small_business' => 'storefront',
+    'large_company' => 'business'
 ];
 
 $languageMap = [
-    'es-latam' => 'Español (Latinoamérica)',
-    'es-mx' => 'Español (México)',
-    'en-us' => 'English (United States)',
-    'fr-fr' => 'Français (France)'
+    'es-419' => __('settings.profile.language.es-419'),
+    'es-latam' => __('settings.profile.language.es-latam'),
+    'es-mx' => __('settings.profile.language.es-mx'),
+    'en-us' => __('settings.profile.language.en-us'),
+    'fr-fr' => __('settings.profile.language.fr-fr')
 ];
 
 // 2. Obtener el texto actual para mostrar en el botón
-$currentUsageText = $usageMap[$userUsageType] ?? 'Uso personal';
-$currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
+$currentUsageText = $usageMap[$userUsageType] ?? $usageMap['personal'];
+$currentLanguageText = $languageMap[$userLanguage] ?? $languageMap['es-419'];
 
 // --- ▲▲▲ FIN DE NUEVO BLOQUE PHP ▲▲▲ ---
 ?>
@@ -30,9 +40,9 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
     <div class="settings-wrapper">
         
         <div class="settings-header-card">
-            <h1 class="settings-title">Tu Perfil</h1>
+            <h1 class="settings-title"><?php echo __('settings.profile.title'); ?></h1>
             <p class="settings-description">
-                Aquí podrás editar tu información de perfil, cambiar tu avatar y nombre de usuario.
+                <?php echo __('settings.profile.description'); ?>
             </p>
         </div>
 
@@ -51,7 +61,7 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                 <div class="settings-card-left">
                     <div class="settings-avatar" data-role="<?php echo htmlspecialchars($userRole); ?>" id="avatar-preview-container">
                         <img src="<?php echo htmlspecialchars($profileImageUrl); ?>" 
-                             alt="Avatar de <?php echo htmlspecialchars($usernameForAlt); ?>"
+                             alt="<?php echo htmlspecialchars(__('header.avatarAlt', ['username' => $usernameForAlt])); ?>"
                              class="settings-avatar-image"
                              id="avatar-preview-image">
                         
@@ -60,25 +70,25 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                         </div>
                         </div>
                     <div class="settings-text-content">
-                        <h2 class="settings-text-title">Foto de perfil</h2>
-                        <p class="settings-text-description">Esto ayudará a tus compañeros a reconocerte.</p>
+                        <h2 class="settings-text-title"><?php echo __('settings.profile.avatar.label'); ?></h2>
+                        <p class="settings-text-description"><?php echo __('settings.profile.avatar.description'); ?></p>
                     </div>
                 </div>
                 
                 <div class="settings-card-right">
                     
                     <div class="settings-card-right-actions" id="avatar-actions-default" <?php echo $isDefaultAvatar ? '' : 'style="display: none;"'; ?>>
-                        <button type="button" class="settings-button" id="avatar-upload-trigger">Subir foto</button>
+                        <button type="button" class="settings-button" id="avatar-upload-trigger"><?php echo __('settings.profile.avatar.buttonUpload'); ?></button>
                     </div>
 
                     <div class="settings-card-right-actions" id="avatar-actions-custom" <?php echo !$isDefaultAvatar ? '' : 'style="display: none;"'; ?>>
-                        <button type="button" class="settings-button danger" id="avatar-remove-trigger">Eliminar foto</button>
-                        <button type="button" class="settings-button" id="avatar-change-trigger">Cambiar foto</button>
+                        <button type="button" class="settings-button danger" id="avatar-remove-trigger"><?php echo __('settings.profile.avatar.buttonRemove'); ?></button>
+                        <button type="button" class="settings-button" id="avatar-change-trigger"><?php echo __('settings.profile.avatar.buttonChange'); ?></button>
                     </div>
 
                     <div class="settings-card-right-actions" id="avatar-actions-preview" style="display: none;">
-                        <button type="button" class="settings-button" id="avatar-cancel-trigger">Cancelar</button>
-                        <button type="submit" class="settings-button" id="avatar-save-trigger">Guardar</button>
+                        <button type="button" class="settings-button" id="avatar-cancel-trigger"><?php echo __('settings.button.cancel'); ?></button>
+                        <button type="submit" class="settings-button" id="avatar-save-trigger"><?php echo __('settings.button.save'); ?></button>
                     </div>
 
                 </div>
@@ -93,7 +103,7 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                 
                 <div class="settings-card-left" id="username-view-state" style="display: flex;">
                     <div class="settings-text-content">
-                        <h2 class="settings-text-title">Nombre de usuario</h2>
+                        <h2 class="settings-text-title"><?php echo __('settings.profile.username.label'); ?></h2>
                         <p class="settings-text-description" 
                            id="username-display-text" 
                            data-original-username="<?php echo htmlspecialchars($usernameForAlt); ?>">
@@ -102,24 +112,25 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                     </div>
                 </div>
                 <div class="settings-card-right" id="username-actions-view" style="display: flex;">
-                    <button type="button" class="settings-button" id="username-edit-trigger">Editar</button>
+                    <button type="button" class="settings-button" id="username-edit-trigger"><?php echo __('settings.button.edit'); ?></button>
                 </div>
 
                 <div class="settings-card-left" id="username-edit-state" style="display: none;">
                     <div class="settings-text-content" style="width: 100%;">
-                        <h2 class="settings-text-title">Nombre de usuario</h2>
+                        <h2 class="settings-text-title"><?php echo __('settings.profile.username.label'); ?></h2>
                         <input type="text" 
                                class="settings-username-input" 
                                id="username-input" 
                                name="username" 
                                value="<?php echo htmlspecialchars($usernameForAlt); ?>"
                                required
-                               minlength="6">
-                    </div>
+                               minlength="6"
+                               maxlength="32">
+                        </div>
                 </div>
                 <div class="settings-card-right-actions" id="username-actions-edit" style="display: none;">
-                    <button type="button" class="settings-button" id="username-cancel-trigger">Cancelar</button>
-                    <button type="submit" class="settings-button" id="username-save-trigger">Guardar</button>
+                    <button type="button" class="settings-button" id="username-cancel-trigger"><?php echo __('settings.button.cancel'); ?></button>
+                    <button type="submit" class="settings-button" id="username-save-trigger"><?php echo __('settings.button.save'); ?></button>
                 </div>
 
             </div>
@@ -133,7 +144,7 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                 
                 <div class="settings-card-left" id="email-view-state" style="display: flex;">
                     <div class="settings-text-content">
-                        <h2 class="settings-text-title">Correo Electrónico</h2>
+                        <h2 class="settings-text-title"><?php echo __('settings.profile.email.label'); ?></h2>
                         <p class="settings-text-description" 
                            id="email-display-text" 
                            data-original-email="<?php echo htmlspecialchars($userEmail); ?>">
@@ -142,23 +153,24 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                     </div>
                 </div>
                 <div class="settings-card-right" id="email-actions-view" style="display: flex;">
-                    <button type="button" class="settings-button" id="email-edit-trigger">Editar</button>
+                    <button type="button" class="settings-button" id="email-edit-trigger"><?php echo __('settings.button.edit'); ?></button>
                 </div>
 
                 <div class="settings-card-left" id="email-edit-state" style="display: none;">
                     <div class="settings-text-content" style="width: 100%;">
-                        <h2 class="settings-text-title">Correo Electrónico</h2>
+                        <h2 class="settings-text-title"><?php echo __('settings.profile.email.label'); ?></h2>
                         <input type="email" 
                                class="settings-username-input" 
                                id="email-input" 
                                name="email" 
                                value="<?php echo htmlspecialchars($userEmail); ?>"
-                               required>
-                    </div>
+                               required
+                               maxlength="255">
+                        </div>
                 </div>
                 <div class="settings-card-right-actions" id="email-actions-edit" style="display: none;">
-                    <button type="button" class="settings-button" id="email-cancel-trigger">Cancelar</button>
-                    <button type="submit" class="settings-button" id="email-save-trigger">Guardar</button>
+                    <button type="button" class="settings-button" id="email-cancel-trigger"><?php echo __('settings.button.cancel'); ?></button>
+                    <button type="submit" class="settings-button" id="email-save-trigger"><?php echo __('settings.button.save'); ?></button>
                 </div>
 
             </div>
@@ -171,11 +183,10 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
             </button>
 
             <div class="settings-modal-content">
-                <h2 class="auth-title" style="margin-bottom: 16px;">Busca el código que te enviamos</h2>
+                <h2 class="auth-title" style="margin-bottom: 16px;"><?php echo __('settings.email.modal.title'); ?></h2>
                 
                 <p class="auth-verification-text" style="margin-bottom: 24px;">
-                    Para poder hacer cambios en tu cuenta, primero debes ingresar
-                    el código que te enviamos (simulado) a 
+                    <?php echo __('settings.email.modal.message'); ?>
                     <strong id="email-verify-modal-email"><?php echo htmlspecialchars($userEmail); ?></strong>.
                 </p>
 
@@ -185,18 +196,18 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                     
                     <div class="auth-input-group">
                         <input type="text" id="email-verify-code" name="verification_code" required placeholder=" " maxlength="14">
-                        <label for="email-verify-code">Código*</label>
+                        <label for="email-verify-code"><?php echo __('auth.form.verificationCode.label'); ?>*</label>
                     </div>
 
                     <div class="auth-step-buttons">
-                        <button type="button" class="auth-button" id="email-verify-continue">Continuar</button>
+                        <button type="button" class="auth-button" id="email-verify-continue"><?php echo __('auth.form.button.continue'); ?></button>
                     </div>
                     </form>
 
                 <div class="settings-modal-footer">
                     <p>
-                        ¿No recibiste el código? 
-                        <a id="email-verify-resend">Volver a enviarlo</a>
+                        <?php echo __('settings.email.modal.noCode'); ?>
+                        <a id="email-verify-resend"><?php echo __('settings.email.modal.resendLink'); ?></a>
                     </p>
                 </div>
 
@@ -206,9 +217,9 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
         <div class="settings-card settings-card-trigger-column">
             <div class="settings-card-left">
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">¿Para qué usarás ProjectGenesis?</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.profile.usage.label'); ?></h2>
                     <p class="settings-text-description">
-                        Esto nos ayudará a personalizar tu experiencia.
+                        <?php echo __('settings.profile.usage.description'); ?>
                     </p>
                 </div>
             </div>
@@ -238,21 +249,30 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                         <div class="menu-content">
                             <div class="menu-list">
 
-                                <?php foreach ($usageMap as $key => $text): ?>
-                                    <?php $isActive = ($key === $userUsageType); ?>
+                                <?php 
+                                // --- ▼▼▼ INICIO DE MODIFICACIÓN DEL BUCLE ▼▼▼ ---
+                                foreach ($usageMap as $key => $text): 
+                                    $isActive = ($key === $userUsageType); 
+                                    $iconName = $usageIconMap[$key] ?? 'person'; // Icono por defecto
+                                ?>
                                     <div class="menu-link <?php echo $isActive ? 'active' : ''; ?>" 
                                          data-value="<?php echo htmlspecialchars($key); ?>">
                                         
                                         <div class="menu-link-icon">
-                                            <?php if ($isActive): ?>
-                                                <span class="material-symbols-rounded">check</span>
-                                            <?php endif; ?>
+                                            <span class="material-symbols-rounded"><?php echo $iconName; ?></span>
                                         </div>
                                         <div class="menu-link-text">
                                             <span><?php echo htmlspecialchars($text); ?></span>
                                         </div>
+                                        <div class="menu-link-check-icon">
+                                            <?php if ($isActive): ?>
+                                                <span class="material-symbols-rounded">check</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php endforeach; 
+                                // --- ▲▲▲ FIN DE MODIFICACIÓN DEL BUCLE ▲▲▲ ---
+                                ?>
                                 
                             </div>
                         </div>
@@ -264,9 +284,9 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
         <div class="settings-card settings-card-trigger-column">
             <div class="settings-card-left">
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Idioma</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.profile.language.label'); ?></h2>
                     <p class="settings-text-description">
-                        Selecciona tu idioma preferido.
+                        <?php echo __('settings.profile.language.description'); ?>
                     </p>
                 </div>
             </div>
@@ -296,21 +316,29 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
                         <div class="menu-content">
                             <div class="menu-list">
 
-                                <?php foreach ($languageMap as $key => $text): ?>
-                                    <?php $isActive = ($key === $userLanguage); ?>
+                                <?php 
+                                // --- ▼▼▼ INICIO DE MODIFICACIÓN DEL BUCLE ▼▼▼ ---
+                                foreach ($languageMap as $key => $text): 
+                                    $isActive = ($key === $userLanguage); 
+                                ?>
                                     <div class="menu-link <?php echo $isActive ? 'active' : ''; ?>" 
                                          data-value="<?php echo htmlspecialchars($key); ?>">
                                         
                                         <div class="menu-link-icon">
-                                            <?php if ($isActive): ?>
-                                                <span class="material-symbols-rounded">check</span>
-                                            <?php endif; ?>
+                                            <span class="material-symbols-rounded">language</span>
                                         </div>
                                         <div class="menu-link-text">
                                             <span><?php echo htmlspecialchars($text); ?></span>
                                         </div>
+                                        <div class="menu-link-check-icon">
+                                            <?php if ($isActive): ?>
+                                                <span class="material-symbols-rounded">check</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php endforeach; 
+                                // --- ▲▲▲ FIN DE MODIFICACIÓN DEL BUCLE ▲▲▲ ---
+                                ?>
                                 
                             </div>
                         </div>
@@ -323,9 +351,9 @@ $currentLanguageText = $languageMap[$userLanguage] ?? 'English (United States)';
         <div class="settings-card settings-card-align-bottom">
             <div class="settings-card-left">
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Abrir los enlaces en una pestaña nueva</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.profile.openLinks.label'); ?></h2>
                     <p class="settings-text-description">
-                        En el navegador web, los enlaces siempre se abrirán en una pestaña nueva.
+                        <?php echo __('settings.profile.openLinks.description'); ?>
                     </p>
                 </div>
             </div>

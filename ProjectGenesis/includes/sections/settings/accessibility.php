@@ -4,12 +4,19 @@
 // $userTheme y $increaseMessageDuration son cargados por config/router.php
 
 $themeMap = [
-    'system' => 'Sincronizar con el sistema',
-    'light' => 'Tema claro',
-    'dark' => 'Tema oscuro'
+    'system' => __('settings.accessibility.theme.system'),
+    'light' => __('settings.accessibility.theme.light'),
+    'dark' => __('settings.accessibility.theme.dark')
 ];
 
-$currentThemeText = $themeMap[$userTheme] ?? 'Sincronizar con el sistema';
+// --- ¡NUEVO MAPA DE ICONOS AÑADIDO! ---
+$themeIconMap = [
+    'system' => 'desktop_windows',
+    'light' => 'light_mode',
+    'dark' => 'dark_mode'
+];
+
+$currentThemeText = $themeMap[$userTheme] ?? $themeMap['system'];
 
 // --- ▲▲▲ FIN DE NUEVO BLOQUE PHP ▲▲▲ ---
 ?>
@@ -17,18 +24,18 @@ $currentThemeText = $themeMap[$userTheme] ?? 'Sincronizar con el sistema';
     <div class="settings-wrapper">
         
         <div class="settings-header-card">
-            <h1 class="settings-title">Accesibilidad</h1>
+            <h1 class="settings-title"><?php echo __('settings.accessibility.title'); ?></h1>
             <p class="settings-description">
-                Ajusta las configuraciones de visualización, como el tamaño del texto o el contraste de colores.
+                <?php echo __('settings.accessibility.description'); ?>
             </p>
         </div>
 
         <div class="settings-card settings-card-trigger-column">
             <div class="settings-card-left">
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Tema</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.accessibility.theme.label'); ?></h2>
                     <p class="settings-text-description">
-                        Elige cómo quieres que se vea la interfaz.
+                        <?php echo __('settings.accessibility.theme.description'); ?>
                     </p>
                 </div>
             </div>
@@ -58,21 +65,30 @@ $currentThemeText = $themeMap[$userTheme] ?? 'Sincronizar con el sistema';
                         <div class="menu-content">
                             <div class="menu-list">
 
-                                <?php foreach ($themeMap as $key => $text): ?>
-                                    <?php $isActive = ($key === $userTheme); ?>
+                                <?php 
+                                // --- ▼▼▼ INICIO DE MODIFICACIÓN DEL BUCLE ▼▼▼ ---
+                                foreach ($themeMap as $key => $text): 
+                                    $isActive = ($key === $userTheme); 
+                                    $iconName = $themeIconMap[$key] ?? 'desktop_windows'; // Icono por defecto
+                                ?>
                                     <div class="menu-link <?php echo $isActive ? 'active' : ''; ?>" 
                                          data-value="<?php echo htmlspecialchars($key); ?>">
                                         
                                         <div class="menu-link-icon">
-                                            <?php if ($isActive): ?>
-                                                <span class="material-symbols-rounded">check</span>
-                                            <?php endif; ?>
+                                            <span class="material-symbols-rounded"><?php echo $iconName; ?></span>
                                         </div>
                                         <div class="menu-link-text">
                                             <span><?php echo htmlspecialchars($text); ?></span>
                                         </div>
+                                        <div class="menu-link-check-icon">
+                                            <?php if ($isActive): ?>
+                                                <span class="material-symbols-rounded">check</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php endforeach; 
+                                // --- ▲▲▲ FIN DE MODIFICACIÓN DEL BUCLE ▲▲▲ ---
+                                ?>
                                 
                             </div>
                         </div>
@@ -85,9 +101,9 @@ $currentThemeText = $themeMap[$userTheme] ?? 'Sincronizar con el sistema';
         <div class="settings-card settings-card-align-bottom">
             <div class="settings-card-left">
                 <div class="settings-text-content">
-                    <h2 class="settings-text-title">Aumenta el tiempo de permanencia de un mensaje en la pantalla.</h2>
+                    <h2 class="settings-text-title"><?php echo __('settings.accessibility.messageDuration.label'); ?></h2>
                     <p class="settings-text-description">
-                        Los mensajes permanecerán más tiempo en pantalla antes de desaparecer.
+                        <?php echo __('settings.accessibility.messageDuration.description'); ?>
                     </p>
                 </div>
             </div>

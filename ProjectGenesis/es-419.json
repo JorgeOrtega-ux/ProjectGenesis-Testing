@@ -1,0 +1,525 @@
+{
+    "config": {
+        "dbError": "ERROR: No se pudo conectar a la base de datos. Por favor, contacta al administrador."
+    },
+    "api": {
+        "invalidAction": "Acción no válida.",
+        "securityErrorReload": "Error de seguridad. Por favor, recarga la página e inténtalo de nuevo.",
+        "dbError": "Error en la base de datos.",
+        "dbErrorUpdate": "Error al actualizar la base de datos.",
+        "accessDenied": "Acceso denegado. No has iniciado sesión.",
+        "register": {
+            "error": {
+                "emptyEmailPass": "Por favor, completa email y contraseña.",
+                "invalidEmailFormat": "El formato de correo no es válido.",
+                "emailTooLong": "El correo no puede tener más de :max caracteres.",
+                "domainNotAllowed": "Solo se permiten correos @gmail, @outlook, @hotmail, @yahoo o @icloud.",
+                "passwordTooShort": "La contraseña debe tener al menos :min caracteres.",
+                "passwordTooLong": "La contraseña no puede tener más de :max caracteres.",
+                "emailInUse": "Este correo electrónico ya está en uso.",
+                "missingStepData": "Faltan datos de los pasos anteriores.",
+                "passwordLengthInvalid": "La contraseña no cumple con los límites (debe tener entre :min y :max caracteres).",
+                "usernameTooShort": "El nombre de usuario debe tener al menos :min caracteres.",
+                "usernameTooLong": "El nombre de usuario no puede tener más de :max caracteres.",
+                "usernameInUse": "Ese nombre de usuario ya está en uso.",
+                "emptyEmailOrCode": "Faltan el correo o el código de verificación.",
+                "codeInvalidOrExpired": "El código de verificación es incorrecto o ha expirado. Vuelve a empezar.",
+                "codeIncorrect": "El código de verificación es incorrecto.",
+                "corruptData": "Error al procesar el registro. Datos corruptos."
+            },
+            "codeGenerated": "Código de verificación generado.",
+            "success": "¡Registro completado! Iniciando sesión..."
+        },
+        "resend": {
+            "error": {
+                "noEmail": "No se ha proporcionado un email.",
+                "noData": "No se encontraron datos de registro. Por favor, vuelve a empezar.",
+                "noResetData": "No se encontraron datos de reseteo. Por favor, vuelve a empezar.",
+                "wait": "Debes esperar :seconds segundos más para reenviar el código."
+            },
+            "success": "Se ha reenviado un nuevo código de verificación."
+        },
+        "login": {
+            "error": {
+                "tooManyAttempts": "Demasiados intentos fallidos. Por favor, inténtalo de nuevo en :minutes minutos.",
+                "invalidCredentials": "Correo o contraseña incorrectos.",
+                "emptyFields": "Por favor, completa todos los campos.",
+                "empty2faFields": "Faltan datos de verificación.",
+                "invalid2faCode": "El código es incorrecto o ha expirado.",
+                "userNotFound": "Error: No se pudo encontrar el usuario."
+            },
+            "2faRequired": "Verificación de dos pasos requerida.",
+            "success": "Inicio de sesión correcto."
+        },
+        "reset": {
+            "error": {
+                "invalidEmail": "Por favor, introduce un correo válido.",
+                "emptyFields": "Faltan datos de verificación.",
+                "invalidCode": "El código es incorrecto o ha expirado.",
+                "missingData": "Faltan datos. Por favor, vuelve a empezar.",
+                "invalidSession": "La sesión de reseteo es inválida. Vuelve a empezar."
+            },
+            "emailSentIfValid": "Si el correo existe, se enviará un código.",
+            "codeGenerated": "Código de recuperación generado.",
+            "success": "Contraseña actualizada. Serás redirigido."
+        }
+    },
+    "settings": {
+        "avatar": {
+            "error": {
+                "upload": "Error al subir el archivo. Código: :code",
+                "size": "El archivo es demasiado grande (máx 2MB).",
+                "format": "Formato de archivo no válido (solo PNG, JPEG, GIF o WebP).",
+                "save": "No se pudo guardar el archivo en el servidor.",
+                "generateDefault": "No se pudo generar el nuevo avatar por defecto desde la API."
+            },
+            "success": {
+                "uploaded": "Avatar actualizado con éxito.",
+                "removed": "Avatar eliminado. Se ha restaurado el avatar por defecto."
+            }
+        },
+        "username": {
+            "error": {
+                "cooldown": "Debes esperar. Podrás cambiar tu nombre de usuario de nuevo en :days :plural.",
+                "cooldownDay": "día",
+                "cooldownDays": "días",
+                "empty": "El nombre de usuario no puede estar vacío.",
+                "noChange": "Este ya es tu nombre de usuario."
+            },
+            "success": "Nombre de usuario actualizado con éxito."
+        },
+        "email": {
+            "error": {
+                "cooldown": "Debes esperar. Podrás cambiar tu correo de nuevo en :days :plural.",
+                "cooldownDay": "día",
+                "cooldownDays": "días",
+                "noChange": "Este ya es tu correo electrónico.",
+                "enum": "Error de BD: El tipo ':codeType' no existe en el ENUM 'code_type' de la tabla 'verification_codes'. Asegúrate de añadirlo.",
+                "emptyCode": "Por favor, introduce el código de verificación."
+            },
+            "codeGenerated": "Se ha generado un código de verificación.",
+            "success": {
+                "verified": "Verificación correcta. Ya puedes editar tu email.",
+                "updated": "Correo electrónico actualizado con éxito."
+            }
+        },
+        "password": {
+            "error": {
+                "cooldown": "Debes esperar. Podrás cambiar tu contraseña de nuevo en :hours :plural.",
+                "cooldownHour": "hora",
+                "cooldownHours": "horas",
+                "emptyCurrent": "Por favor, introduce tu contraseña actual.",
+                "wrongCurrent": "La contraseña actual es incorrecta.",
+                "emptyNew": "Por favor, completa ambos campos de nueva contraseña.",
+                "mismatch": "Las nuevas contraseña no coinciden.",
+                "enum": "Error de BD: Asegúrate de añadir 'password' al ENUM 'change_type' en la tabla 'user_audit_logs'."
+            },
+            "success": {
+                "verified": "Contraseña actual correcta.",
+                "updated": "¡Contraseña actualizada con éxito!"
+            }
+        },
+        "2fa": {
+            "success": {
+                "enabled": "Verificación de dos pasos activada.",
+                "disabled": "Verificación de dos pasos desactivada."
+            }
+        },
+        "prefs": {
+            "error": {
+                "invalidField": "Configuración de preferencia no válida.",
+                "invalidToggleValue": "El valor para un interruptor debe ser 0 o 1.",
+                "invalidValue": "Valor de preferencia no válido."
+            },
+            "success": "Preferencia actualizada."
+        },
+        "devices": {
+            "logoutAllSuccess": "Se han invalidado todas las demás sesiones."
+        },
+        "button": {
+            "edit": "Editar",
+            "cancel": "Cancelar",
+            "save": "Guardar"
+        },
+        "profile": {
+            "title": "Tu Perfil",
+            "description": "Aquí podrás editar tu información de perfil, cambiar tu avatar y nombre de usuario.",
+            "avatar": {
+                "label": "Foto de perfil",
+                "description": "Esto ayudará a tus compañeros a reconocerte.",
+                "buttonUpload": "Subir foto",
+                "buttonRemove": "Eliminar foto",
+                "buttonChange": "Cambiar foto"
+            },
+            "username": {
+                "label": "Nombre de usuario"
+            },
+            "email": {
+                "label": "Correo Electrónico",
+                "modal": {
+                    "title": "Busca el código que te enviamos",
+                    "message": "Para poder hacer cambios en tu cuenta, primero debes ingresar el código que te enviamos (simulado) a",
+                    "noCode": "¿No recibiste el código?",
+                    "resendLink": "Volver a enviarlo"
+                }
+            },
+            "usage": {
+                "label": "¿Para qué usarás ProjectGenesis?",
+                "description": "Esto nos ayudará a personalizar tu experiencia.",
+                "personal": "Uso personal",
+                "student": "Estudiante",
+                "teacher": "Docente",
+                "small_business": "Empresa pequeña",
+                "large_company": "Empresa grande"
+            },
+            "language": {
+                "label": "Idioma",
+                "description": "Selecciona tu idioma preferido.",
+                "es-419": "Español (Latinoamérica)",
+                "es-latam": "Español (Latinoamérica - Legacy)",
+                "es-mx": "Español (México)",
+                "en-us": "English (United States)",
+                "fr-fr": "Français (France)"
+            },
+            "openLinks": {
+                "label": "Abrir los enlaces en una pestaña nueva",
+                "description": "En el navegador web, los enlaces siempre se abrirán en una pestaña nueva."
+            }
+        },
+        "login": {
+            "title": "Inicio de Sesión y Seguridad",
+            "description": "Gestiona tu contraseña, activa la verificación de dos pasos (2FA) y revisa tu historial de inicio de sesión.",
+            "password": {
+                "label": "Contraseña",
+                "button": "Actualizar"
+            },
+            "lastUpdatePrefix": "Última actualización:",
+            "passwordNeverUpdated": "Nunca se ha actualizado la contraseña.",
+            "error": {
+                "history": "No se pudo cargar el historial de actualizaciones."
+            },
+            "2fa": {
+                "label": "Verificación de dos pasos (2FA)",
+                "descriptionEnabled": "La autenticación de dos pasos está activa.",
+                "descriptionDisabled": "Añade una capa extra de seguridad a tu cuenta.",
+                "buttonEnable": "Habilitar",
+                "buttonDisable": "Deshabilitar"
+            },
+            "devices": {
+                "label": "Sesiones de dispositivos",
+                "description": "Revisa y administra los dispositivos donde has iniciado sesión.",
+                "button": "Administrar dispositivos"
+            },
+            "deleteAccount": {
+                "label": "Eliminar tu cuenta",
+                "description": "Si eliminas tu cuenta, ya no podrás acceder a ninguno de tus diseños ni iniciar sesión.",
+                "button": "Eliminar cuenta"
+            }
+        },
+        "accessibility": {
+            "title": "Accesibilidad",
+            "description": "Ajusta las configuraciones de visualización, como el tamaño del texto o el contraste de colores.",
+            "theme": {
+                "label": "Tema",
+                "description": "Elige cómo quieres que se vea la interfaz.",
+                "system": "Sincronizar con el sistema",
+                "light": "Tema claro",
+                "dark": "Tema oscuro"
+            },
+            "messageDuration": {
+                "label": "Aumenta el tiempo de permanencia de un mensaje en la pantalla.",
+                "description": "Los mensajes permanecerán más tiempo en pantalla antes de desaparecer."
+            }
+        },
+        "devices": {
+            "title": "Sesiones de Dispositivos",
+            "description": "Estos son los dispositivos que han iniciado sesión en tu cuenta. Puedes cerrar la sesión en todos los dispositivos a la vez.",
+            "logoutAll": {
+                "label": "Invalidar todas las sesiones",
+                "description": "Cierra la sesión en todos tus dispositivos, incluida esta sesión actual. Serás redirigido a la página de inicio de sesión.",
+                "button": "Cerrar sesión",
+                "modal": {
+                    "title": "Cerrar sesión en todos los dispositivos",
+                    "message": "¿Estás seguro de que deseas cerrar sesión en TODOS tus dispositivos, incluido este? Serás redirigido a la página de inicio de sesión.",
+                    "confirmButton": "Cerrar sesión"
+                }
+            },
+            "activeSessionsTitle": "Dispositivos con sesión activa",
+            "noSessions": {
+                "title": "No se encontraron sesiones",
+                "description": "No hay un historial de inicio de sesión para mostrar."
+            },
+            "unknownBrowser": "Navegador Desconocido",
+            "unknownOS": "SO Desconocido",
+            "deviceFormat": ":browser en :os",
+            "lastAccess": "Último acceso:"
+        }
+    },
+    "logout": {
+        "sessionExpired": "Tu sesión ha expirado o es inválida."
+    },
+    "router": {
+        "regError": {
+            "title": "Error en el registro",
+            "button": "Volver al inicio del registro",
+            "step1": {
+                "title": "Error 400: Faltan datos del paso 1.",
+                "details": "No has completado el paso 1 (email y contraseña) antes de acceder a esta página."
+            },
+            "step2": {
+                "title": "Error 400: Faltan datos del paso 2.",
+                "details": "No has completado el paso 2 (nombre de usuario) antes de acceder a esta página."
+            }
+        },
+        "resetError": {
+            "title": "Error en la recuperación",
+            "button": "Volver al inicio de la recuperación",
+            "step1": {
+                "title": "Error 400: Faltan datos del paso 1.",
+                "details": "No has completado el paso 1 (email) antes de acceder a esta página."
+            },
+            "step2": {
+                "title": "Error 400: Faltan datos del paso 2.",
+                "details": "No has completado el paso 2 (código) antes de acceder a esta página."
+            }
+        },
+        "error": {
+            "oops": "¡Uy! Faltan datos."
+        },
+        "defaultUsername": "Usuario"
+    },
+    "header": {
+        "avatarAlt": "Avatar de :username",
+        "menu": {
+            "settings": "Configuración",
+            "help": "Ayuda y comentarios",
+            "logout": "Cerrar sesión"
+        }
+    },
+    "sidebar": {
+        "settings": {
+            "backToHome": "Volver a Inicio",
+            "profile": "Tu Perfil",
+            "login": "Inicio de Sesión y Seguridad",
+            "accessibility": "Accesibilidad"
+        },
+        "main": {
+            "home": "Página principal",
+            "explorer": "Explorar comunidades"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "Iniciar sesión",
+            "forgotPasswordLink": "¿Olvidaste tu contraseña?",
+            "2fa": {
+                "message": "Se ha enviado un código de verificación a tu correo. Por favor, ingrésalo para continuar.",
+                "button": "Verificar e Ingresar"
+            },
+            "noAccount": "¿No tienes una cuenta?",
+            "createAccountLink": "Crear cuenta"
+        },
+        "register": {
+            "title": "Crea una cuenta",
+            "verification": {
+                "message": "Te hemos enviado un código de verificación al correo <strong>:email</strong>. Por favor, ingrésalo para finalizar tu registro.",
+                "fallbackEmail": "tu correo",
+                "button": "Verificar y Crear Cuenta"
+            },
+            "haveAccount": "¿Ya tienes una cuenta?",
+            "loginLink": "Inicia sesión"
+        },
+        "reset": {
+            "title": "Recuperar Contraseña",
+            "step1": {
+                "message": "Ingresa tu correo electrónico y te enviaremos un código de recuperación.",
+                "button": "Enviar Código"
+            },
+            "step2": {
+                "message": "Revisa tu bandeja de entrada e ingresa el código.",
+                "button": "Verificar"
+            },
+            "step3": {
+                "message": "Ingresa tu nueva contraseña. Debe tener al menos 8 caracteres.",
+                "newPassword": {
+                    "label": "Nueva Contraseña"
+                },
+                "confirmPassword": {
+                    "label": "Confirmar Contraseña"
+                },
+                "button": "Guardar y Continuar"
+            },
+            "rememberedPassword": "¿Recordaste tu contraseña?"
+        },
+        "form": {
+            "email": {
+                "label": "Dirección de correo electrónico"
+            },
+            "password": {
+                "label": "Contraseña"
+            },
+            "username": {
+                "label": "Nombre de usuario"
+            },
+            "verificationCode": {
+                "label": "Código de Verificación"
+            },
+            "button": {
+                "continue": "Continuar",
+                "back": "Atrás"
+            },
+            "resendCodeLink": "Reenviar código de verificación"
+        }
+    },
+    "404": {
+        "title": "¡Vaya! Página no encontrada.",
+        "message": "No pudimos encontrar la página que estás buscando. Es posible que se haya movido o que ya no exista."
+    },
+    "datetime": {
+        "ago": {
+            "year": "hace :count año(s)",
+            "month": "hace :count mes(es)",
+            "day": "hace :count día(s)",
+            "hour": "hace :count hora(s)",
+            "minute": "hace :count minuto(s)",
+            "seconds": "hace unos segundos"
+        },
+        "unknown": "fecha desconocida"
+    },
+    "js": {
+        "alert": {
+            "error": {
+                "containerNotFound": "No se encontró #alert-container. Asegúrate de añadirlo a tu index.php"
+            }
+        },
+        "api": {
+            "error": {
+                "server": "Error en la respuesta del servidor.",
+                "security": "Error de seguridad. Recargando la página...",
+                "connect": "No se pudo conectar con el servidor."
+            }
+        },
+        "button": {
+            "verifying": "Verificando...",
+            "saving": "Guardando...",
+            "processing": "Procesando...",
+            "sending": "Enviando..."
+        },
+        "error": {
+            "unknown": "Ha ocurrido un error.",
+            "fillFields": "Por favor, completa todos los campos correctamente.",
+            "emailNotFound": "Error: No se encontró tu email. Por favor, recarga la página."
+        },
+        "logout": {
+            "error": {
+                "network": "No hay conexión a internet.",
+                "generic": "Error al cerrar sesión: :error"
+            }
+        },
+        "register": {
+            "error": {
+                "passwordLength": "La contraseña debe tener entre :min y :max caracteres.",
+                "passwordMismatch": "Las contraseñas no coinciden.",
+                "emptyEmailPass": "Por favor, completa email y contraseña.",
+                "invalidEmail": "El formato de correo no es válido.",
+                "emailLength": "El correo no puede tener más de 255 caracteres.",
+                "domain": "Solo se permiten correos @gmail, @outlook, @hotmail, @yahoo o @icloud.",
+                "emptyUsername": "Por favor, introduce un nombre de usuario.",
+                "usernameLength": "El nombre de usuario debe tener entre :min y :max caracteres."
+            }
+        },
+        "reset": {
+            "success": "¡Contraseña actualizada!",
+            "error": {
+                "noEmail": "Error: No se encontró tu email. Por favor, vuelve al paso 1.",
+                "invalidCode": "Por favor, introduce el código de verificación completo."
+            }
+        },
+        "resend": {
+            "success": "Se ha reenviado un nuevo código.",
+            "error": "Error al reenviar el código."
+        },
+        "login": {
+             "error": {
+                "emptyFields": "Por favor, completa email y contraseña."
+            }
+        },
+        "url": {
+            "error": {
+                "loadPage": "Error al cargar la página:",
+                "loadContent": "Error al cargar el contenido"
+            }
+        },
+        "settings": {
+            "prefs": {
+                "error": {
+                    "missing": "handlePreferenceChange: Faltan el tipo/campo o el valor.",
+                    "unknown": "Tipo de preferencia desconocido:",
+                    "generic": "Error al guardar la preferencia.",
+                    "noFieldName": "Este toggle no tiene un data-field-name:"
+                },
+                "success": "Preferencia actualizada.",
+                "languageSuccess": "Idioma actualizado. La página se recargará."
+            },
+            "avatar": {
+                "removeSuccess": "Avatar eliminado.",
+                "error": {
+                    "remove": "Error desconocido al eliminar.",
+                    "select": "Por favor, selecciona un archivo primero.",
+                    "format": "Formato no válido (solo PNG, JPEG, GIF o WebP).",
+                    "size": "El archivo es demasiado grande (máx 2MB).",
+                    "save": "Error desconocido al guardar."
+                },
+                "success": "Avatar actualizado."
+            },
+            "username": {
+                "success": "Nombre de usuario actualizado.",
+                "error": {
+                    "save": "Error desconocido al guardar."
+                }
+            },
+            "email": {
+                "codeSent": "Se ha enviado un código a tu correo actual.",
+                "error": {
+                    "code": "Error al solicitar el código.",
+                    "resend": "Error al reenviar el código.",
+                    "emptyCode": "Por favor, introduce el código.",
+                    "verify": "Error al verificar.",
+                    "save": "Error desconocido al guardar."
+                },
+                "codeResent": "Se ha reenviado un nuevo código.",
+                "verifySuccess": "Verificación correcta." ,
+                "success": "Correo actualizado."
+            },
+            "2fa": {
+                "error": {
+                    "modal": "Error: No se encontró el modal de verificación.",
+                    "toggle": "Error al cambiar 2FA."
+                },
+                "modal": {
+                    "titleEnable": "Activar Verificación de dos pasos",
+                    "textEnable": "Para activar esta función, por favor ingresa tu contraseña actual.",
+                    "titleDisable": "Desactivar Verificación de dos pasos",
+                    "textDisable": "Para desactivar esta función, por favor ingresa tu contraseña actual.",
+                    "title": "Verifica tu identidad",
+                    "message": "Para continuar, por favor ingresa tu contraseña actual.",
+                    "button": "Confirmar"
+                }
+            },
+            "password": {
+                "error": {
+                    "empty": "Por favor, introduce tu contraseña actual.",
+                    "verify": "Error al verificar.",
+                    "save": "Error al guardar."
+                },
+                "success": "Contraseña actualizada."
+            },
+            "devices": {
+                "logoutSuccess": "Se invalidaron las demás sesiones. Cerrando sesión actual...",
+                "error": {
+                    "logout": "Error al cerrar las sesiones."
+                }
+            }
+        }
+    }
+}

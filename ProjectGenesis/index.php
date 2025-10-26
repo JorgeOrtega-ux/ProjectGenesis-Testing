@@ -168,7 +168,7 @@ if (isset($_SESSION['theme'])) {
                     ?>
                     <?php endif; ?>
 
-                    <div class="general-content-scrolleable">
+                    <div class="general-content-scrolleable overflow-y">
                         <div class="main-sections">
                             </div>
                     
@@ -187,6 +187,10 @@ if (isset($_SESSION['theme'])) {
         window.userIncreaseMessageDuration = <?php echo $_SESSION['increase_message_duration'] ?? 0; ?>;
         // --- ▲▲▲ ¡FIN DE MODIFICACIÓN! ▲▲▲ ---
     </script>
+
+    <script>
+    window.translations = <?php echo json_encode($translations); ?>;
+</script>
     <script type="module" src="<?php echo $basePath; ?>/assets/js/app-init.js"></script>
     
     <div id="alert-container"></div>
