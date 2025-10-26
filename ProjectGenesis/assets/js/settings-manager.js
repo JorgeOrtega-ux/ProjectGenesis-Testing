@@ -644,22 +644,151 @@ export function initSettingsManager() {
         // --- ▲▲▲ FIN: LÓGICA PARA CONTRASEÑA ▲▲▲ ---
 
         
-        // --- ▼▼▼ ¡INICIO DE MODIFICACIÓN! Bloque ELIMINADO ▼▼▼ ---
-        /*
-        Toda la lógica de 'click' para 
-        #logout-all-devices-trigger, 
-        #logout-all-close, 
-        #logout-all-cancel, 
-        y #logout-all-confirm 
-        ha sido eliminada de este archivo.
+        // --- ▼▼▼ ¡INICIO DE LA CORRECCIÓN! (RE-AÑADIR LÓGICA) ▼▼▼ ---
+        // Esta es la lógica que fue eliminada y ahora se re-introduce
         
-        El botón #logout-all-devices-trigger ahora se encuentra
-        en 'device-sessions.php' y la lógica del modal
-        (que sigue siendo la misma) se activará cuando 
-        el usuario esté en esa página.
-        */
-        // --- ▲▲▲ ¡FIN DE MODIFICACIÓN! ▲▲▲ ---
+        if (e.target.closest('#logout-all-devices-trigger')) {
+            e.preventDefault();
+            const modal = document.getElementById('logout-all-modal');
+            if(modal) {
+                // Resetear el spinner del botón por si se cerró antes
+                const dangerBtn = modal.querySelector('#logout-all-confirm');
+                if(dangerBtn) {
+                     toggleButtonSpinner(dangerBtn, 'Cerrar sesión', false);
+                }
+                modal.style.display = 'flex';
+            }
+            return;
+        }
+
+        if (e.target.closest('#logout-all-close') || e.target.closest('#logout-all-cancel')) {
+            e.preventDefault();
+            const modal = document.getElementById('logout-all-modal');
+            if(modal) modal.style.display = 'none';
+            return;
+        }
+
+        if (e.target.closest('#logout-all-confirm')) {
+            e.preventDefault();
+            const confirmButton = e.target.closest('#logout-all-confirm');
+            
+            toggleButtonSpinner(confirmButton, 'Cerrar sesión', true);
+
+            // 1. Llamar a la API para invalidar otras sesiones
+            const formData = new FormData();
+            formData.append('action', 'logout-all-devices');
+            
+            // callSettingsApi (de api-service.js) añadirá el CSRF token
+            const result = await callSettingsApi(formData);
+
+            if (result.success) {
+                // 2. Si tiene éxito, cerrar la sesión ACTUAL
+                window.showAlert('Se invalidaron las demás sesiones. Cerrando sesión actual...', 'success');
+                
+                // Esperar un poco para que el usuario lea el toast
+                setTimeout(() => {
+                    const token = window.csrfToken || '';
+                    const logoutUrl = (window.projectBasePath || '') + '/config/logout.php';
+                    // Redirigir para el logout manual
+                    window.location.href = `${logoutUrl}?csrf_token=${encodeURIComponent(token)}`;
+                }, 1500); // 1.5 segundos
+
+            } else {
+                // 3. Si falla, mostrar error y re-habilitar el botón
+                window.showAlert(result.message || 'Error al cerrar las sesiones.', 'error');
+                toggleButtonSpinner(confirmButton, 'Cerrar sesión', false);
+            }
+            return;
+        }
+        // --- ▲▲▲ ¡FIN DE LA CORRECCIÓN! ▲▲▲ ---
         
+
+        // --- ▼▼▼ ¡INICIO DE NUEVA LÓGICA (LOGOUT SINGLE DEVICE)! ▼▼▼ ---
+
+        // 1. Abrir el modal de confirmación
+        if (e.target.closest('[data-action="logout-single-device"]')) {
+            e.preventDefault();
+            const button = e.target.closest('[data-action="logout-single-device"]');
+            const sessionId = button.dataset.sessionId;
+            const deviceInfo = button.dataset.deviceInfo;
+            
+            const modal = document.getElementById('logout-single-modal');
+            if (!modal) return;
+
+            // Rellenar el modal con la info del dispositivo
+            const infoText = modal.querySelector('#logout-single-device-info');
+            if (infoText) {
+                infoText.textContent = deviceInfo || 'este dispositivo';
+            }
+
+            // Limpiar errores y spinners
+            const errorDiv = modal.querySelector('#logout-single-error');
+            if(errorDiv) errorDiv.style.display = 'none';
+            
+            const confirmBtn = modal.querySelector('#logout-single-confirm');
+            if(confirmBtn) {
+                // Guardar el ID en el botón de confirmar
+                confirmBtn.dataset.sessionIdToLogout = sessionId;
+                toggleButtonSpinner(confirmBtn, 'Cerrar sesión', false);
+            }
+
+            modal.style.display = 'flex';
+            return;
+        }
+
+        // 2. Cerrar o cancelar el modal
+        if (e.target.closest('[data-action="logout-single-close"]') || e.target.closest('[data-action="logout-single-cancel"]')) {
+            e.preventDefault();
+            const modal = document.getElementById('logout-single-modal');
+            if (modal) modal.style.display = 'none';
+            return;
+        }
+
+        // 3. Confirmar el cierre de sesión único
+        if (e.target.closest('#logout-single-confirm')) {
+            e.preventDefault();
+            const confirmButton = e.target.closest('#logout-single-confirm');
+            const modal = confirmButton.closest('#logout-single-modal');
+            const errorDiv = modal ? modal.querySelector('#logout-single-error') : null;
+            const sessionId = confirmButton.dataset.sessionIdToLogout;
+
+            if (!sessionId) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Error: No se encontró el ID de la sesión. Recarga la página.';
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            toggleButtonSpinner(confirmButton, 'Cerrar sesión', true);
+            if (errorDiv) errorDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('action', 'logout-single-device');
+            formData.append('session_id', sessionId);
+
+            const result = await callSettingsApi(formData);
+
+            if (result.success) {
+                if (modal) modal.style.display = 'none';
+                window.showAlert(result.message || 'Sesión cerrada.', 'success');
+
+                // Eliminar la tarjeta del DOM
+                const cardToRemove = document.querySelector(`[data-session-card-id="${sessionId}"]`);
+                if (cardToRemove) {
+                    cardToRemove.remove();
+                }
+            } else {
+                if (errorDiv) {
+                    errorDiv.textContent = result.message || 'Error al cerrar la sesión.';
+                    errorDiv.style.display = 'block';
+                }
+                toggleButtonSpinner(confirmButton, 'Cerrar sesión', false);
+            }
+            return;
+        }
+        
+        // --- ▲▲▲ ¡FIN DE NUEVA LÓGICA! ▲▲▲ ---
 
         
         // --- ▼▼▼ INICIO: LÓGICA MODIFICADA PARA PREFERENCE SELECTORS ▼▼▼ ---

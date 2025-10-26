@@ -131,8 +131,9 @@ function formatSessionDate($dateTimeString) {
                     $deviceIcon = ($session['device_type'] === 'Mobile') ? 'smartphone' : 'computer';
                     $deviceInfo = formatUserAgent($session['browser_info']);
                     $sessionDate = formatSessionDate($session['created_at']);
+                    $deviceInfoWithIp = $deviceInfo . ' (' . $session['ip_address'] . ')';
                 ?>
-                <div class="settings-card">
+                <div class="settings-card" data-session-card-id="<?php echo $session['id']; ?>">
                     <div class="settings-card-left">
                         <div class="settings-card-icon">
                             <span class="material-symbols-rounded"><?php echo $deviceIcon; ?></span>
@@ -148,11 +149,17 @@ function formatSessionDate($dateTimeString) {
 
                     <div class="settings-card-right">
                         <div class="settings-card-right-actions">
-                            <button type="button" class="settings-button danger" disabled>Cerrar sesión</button>
-                        </div>
+                            <button type="button" 
+                                    class="settings-button danger" 
+                                    data-action="logout-single-device" 
+                                    data-session-id="<?php echo $session['id']; ?>"
+                                    data-device-info="<?php echo htmlspecialchars($deviceInfoWithIp); ?>">
+                                Cerrar sesión
+                            </button>
+                            </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
         <?php endif; ?>
 
     </div>
@@ -173,6 +180,31 @@ function formatSessionDate($dateTimeString) {
                     <div class="auth-step-buttons">
                         <button type="button" class="auth-button-back" id="logout-all-cancel" style="flex: 1;">Cancelar</button>
                         <button type="button" class="auth-button danger" id="logout-all-confirm" style="flex: 1; background-color: #c62828; border-color: #c62828;">Cerrar sesión</button>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+    
+    <div class="settings-modal-overlay" id="logout-single-modal" style="display: none;">
+        <button type="button" class="settings-modal-close-btn" data-action="logout-single-close">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+        <div class="settings-modal-content">
+            <div class="auth-form">
+                <fieldset class="auth-step active">
+                    <h2 class="auth-title">Cerrar sesión en este dispositivo</h2>
+                    <p class="auth-verification-text">
+                        ¿Estás seguro de que deseas cerrar la sesión del dispositivo:
+                        <br>
+                        <strong id="logout-single-device-info" style="color: #000; font-weight: 600; margin-top: 8px; display: block;"></strong>
+                    </p>
+                    
+                    <div class="auth-error-message" id="logout-single-error" style="display: none;"></div>
+
+                    <div class="auth-step-buttons">
+                        <button type="button" class="auth-button-back" data-action="logout-single-cancel" style="flex: 1;">Cancelar</button>
+                        <button type="button" class="auth-button danger" id="logout-single-confirm" style="flex: 1; background-color: #c62828; border-color: #c62828;">Cerrar sesión</button>
                     </div>
                 </fieldset>
             </div>

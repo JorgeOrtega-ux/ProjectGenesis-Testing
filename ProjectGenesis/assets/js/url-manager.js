@@ -148,12 +148,12 @@ async function updateGlobalMenuVisibility(isSettings) {
 export function initRouter() {
 
     document.body.addEventListener('click', e => {
-        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
-        // Ahora también escucha por `a[href*="/reset-password"]`
+        // --- ▼▼▼ ¡INICIO DE LA CORRECCIÓN! ▼▼▼ ---
+        // Se añadió '.settings-button[data-action*="toggleSection"]' al selector
         const link = e.target.closest(
-            '.menu-link[data-action*="toggleSection"], a[href*="/login"], a[href*="/register"], a[href*="/reset-password"], a[data-nav-js]'
+            '.menu-link[data-action*="toggleSection"], a[href*="/login"], a[href*="/register"], a[href*="/reset-password"], a[data-nav-js], .settings-button[data-action*="toggleSection"]'
         );
-        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
+        // --- ▲▲▲ ¡FIN DE LA CORRECCIÓN! ▲▲▲ ---
 
         if (link) {
             e.preventDefault();
