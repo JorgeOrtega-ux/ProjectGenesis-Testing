@@ -939,7 +939,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 
                 exec($command . ' 2>&1', $output, $return_var);
-                if ($return_var !== 0) throw new Exception(getTranslation('admin.backups.errorExecCreate') . ' ' . implode('; ', $output));
+                // --- ▼▼▼ CORRECCIÓN ▼▼▼ ---
+                if ($return_var !== 0) throw new Exception('admin.backups.errorExecCreate' . ' ' . implode('; ', $output));
+                // --- ▲▲▲ FIN DE CORRECCIÓN ▲▲▲ ---
                 
                 $response['success'] = true;
                 $response['message'] = 'admin.backups.successCreate';
@@ -963,7 +965,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 
                 exec($command . ' 2>&1', $output, $return_var);
-                if ($return_var !== 0) throw new Exception(getTranslation('admin.backups.errorExecRestore') . ' ' . implode('; ', $output));
+                // --- ▼▼▼ CORRECCIÓN ▼▼▼ ---
+                if ($return_var !== 0) throw new Exception('admin.backups.errorExecRestore' . ' ' . implode('; ', $output));
+                // --- ▲▲▲ FIN DE CORRECCIÓN ▲▲▲ ---
                 
                 $response['success'] = true;
                 $response['message'] = 'admin.backups.successRestore';

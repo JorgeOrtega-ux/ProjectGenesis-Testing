@@ -1,4 +1,5 @@
 // FILE: assets/js/modules/admin-backups-manager.js
+// (CÓDIGO MODIFICADO)
 
 import { showAlert } from '../services/alert-manager.js';
 import { getTranslation } from '../services/i18n-manager.js';
@@ -51,9 +52,9 @@ async function callBackupApi(formData) {
 export function initAdminBackupsManager() {
 
     let selectedBackupFile = null;
-    const toolbarContainer = document.getElementById('backup-toolbar-container');
 
     function enableSelectionActions() {
+        const toolbarContainer = document.getElementById('backup-toolbar-container');
         if (!toolbarContainer) return;
         toolbarContainer.classList.add('selection-active');
         const selectionButtons = toolbarContainer.querySelectorAll('.toolbar-action-selection button');
@@ -63,6 +64,7 @@ export function initAdminBackupsManager() {
     }
 
     function disableSelectionActions() {
+        const toolbarContainer = document.getElementById('backup-toolbar-container');
         if (!toolbarContainer) return;
         toolbarContainer.classList.remove('selection-active');
         const selectionButtons = toolbarContainer.querySelectorAll('.toolbar-action-selection button');
@@ -72,7 +74,9 @@ export function initAdminBackupsManager() {
     }
 
     function clearBackupSelection() {
-        const selectedCard = document.querySelector('.user-card-item.selected[data-backup-filename]');
+        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+        const selectedCard = document.querySelector('.card-item.selected[data-backup-filename]');
+        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
         if (selectedCard) {
             selectedCard.classList.remove('selected');
         }
@@ -94,17 +98,156 @@ export function initAdminBackupsManager() {
             iconSpan.innerHTML = `<span class="logout-spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto; border-top-color: inherit;"></span>`;
         } else {
             button.disabled = false;
-            iconSpan.innerHTML = button.dataset.originalIcon || 'error';
+            if (button.dataset.originalIcon) {
+                iconSpan.innerHTML = button.dataset.originalIcon;
+            }
         }
     }
+
+    /**
+     * Restablece la barra de herramientas a su estado inicial.
+     */
+    function resetToolbarState(buttonEl = null) {
+        const toolbarContainer = document.getElementById('backup-toolbar-container');
+        if (!toolbarContainer) return;
+
+        if (buttonEl) {
+            toggleToolbarSpinner(buttonEl, false);
+        }
+        
+        toolbarContainer.querySelectorAll('.toolbar-action-default button').forEach(btn => btn.disabled = false);
+        
+        clearBackupSelection();
+    }
+
+    // --- ▼▼▼ INICIO DE NUEVAS FUNCIONES DE RENDERIZADO ▼▼▼ ---
+    
+    /**
+     * Formatea bytes a un tamaño legible (KB, MB, GB)
+     */
+    function formatBackupSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        const kb = bytes / 1024;
+        if (kb < 1024) return kb.toFixed(2) + ' KB';
+        const mb = kb / 1024;
+        if (mb < 1024) return mb.toFixed(2) + ' MB';
+        const gb = mb / 1024;
+        return gb.toFixed(2) + ' GB';
+    }
+    
+    /**
+     * Formatea un timestamp de JS a d/m/Y H:i:s
+     */
+    function formatBackupDate(timestamp) {
+        // PHP filemtime() devuelve timestamp en segundos, no milisegundos
+        const date = new Date(timestamp * 1000); 
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        const h = String(date.getHours()).padStart(2, '0');
+        const i = String(date.getMinutes()).padStart(2, '0');
+        const s = String(date.getSeconds()).padStart(2, '0');
+        return `${d}/${m}/${y} ${h}:${i}:${s}`;
+    }
+
+    /**
+     * Añade la tarjeta del nuevo backup a la lista
+     */
+    function renderNewBackup(backupData) {
+        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+        const listContainer = document.querySelector('.card-list-container');
+        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
+        if (!listContainer) return;
+
+        // Quitar el mensaje de "no hay copias" si existe
+        const noBackupCard = listContainer.querySelector('.component-card');
+        if (noBackupCard && !noBackupCard.hasAttribute('data-backup-filename')) {
+            noBackupCard.remove();
+        }
+
+        const newCard = document.createElement('div');
+        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+        newCard.className = 'card-item';
+        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
+        newCard.dataset.backupFilename = backupData.filename;
+        newCard.style = "gap: 16px; padding: 16px;"; // Estilos inline como en el PHP
+
+        newCard.innerHTML = `
+            <div class="component-card__icon" style="width: 50px; height: 50px; flex-shrink: 0; background-color: #f5f5fa;">
+                <span class="material-symbols-rounded" style="font-size: 28px;">database</span>
+            </div>
+            <div class="card-item-details">
+                <div class="card-detail-item card-detail-item--full" style="border: none; padding: 0; background: none;">
+                    <span class="card-detail-value" style="font-size: 16px; font-weight: 600;">${backupData.filename}</span>
+                </div>
+                <div class="card-detail-item">
+                    <span class="card-detail-label" data-i18n="admin.backups.labelDate"></span>
+                    <span class="card-detail-value">${formatBackupDate(backupData.created_at)}</span>
+                </div>
+                <div class="card-detail-item">
+                    <span class="card-detail-label" data-i18n="admin.backups.labelSize"></span>
+                    <span class="card-detail-value">${formatBackupSize(backupData.size)}</span>
+                </div>
+            </div>
+        `;
+        
+        listContainer.prepend(newCard);
+        
+        const newLabelDate = newCard.querySelector('[data-i18n="admin.backups.labelDate"]');
+        if (newLabelDate) newLabelDate.textContent = getTranslation('admin.backups.labelDate');
+        
+        const newLabelSize = newCard.querySelector('[data-i18n="admin.backups.labelSize"]');
+        if (newLabelSize) newLabelSize.textContent = getTranslation('admin.backups.labelSize');
+    }
+
+    /**
+     * Elimina la tarjeta del backup de la lista
+     */
+    function removeDeletedBackup(filename) {
+        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+        const cardToRemove = document.querySelector(`.card-item[data-backup-filename="${filename}"]`);
+        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
+        if (cardToRemove) {
+            cardToRemove.remove();
+        }
+
+        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+        const listContainer = document.querySelector('.card-list-container');
+        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
+        if (listContainer && listContainer.children.length === 0) {
+            listContainer.innerHTML = `
+                <div class="component-card">
+                    <div class="component-card__content">
+                        <div class="component-card__icon">
+                            <span class="material-symbols-rounded">database</span>
+                        </div>
+                        <div class="component-card__text">
+                            <h2 class="component-card__title" data-i18n="admin.backups.noBackupsTitle"></h2>
+                            <p class="component-card__description" data-i18n="admin.backups.noBackupsDesc"></p>
+                        </div>
+                    </div>
+                </div>`;
+            const title = listContainer.querySelector('[data-i18n="admin.backups.noBackupsTitle"]');
+            if (title) title.textContent = getTranslation('admin.backups.noBackupsTitle');
+            const desc = listContainer.querySelector('[data-i18n="admin.backups.noBackupsDesc"]');
+            if (desc) desc.textContent = getTranslation('admin.backups.noBackupsDesc');
+        }
+    }
+    // --- ▲▲▲ FIN DE NUEVAS FUNCIONES DE RENDERIZADO ---
+
 
     /**
      * Maneja las acciones de la API de backup.
      */
     async function handleBackupAction(action, filename = null, buttonEl = null) {
         
-        // Deshabilitar todos los botones mientras se procesa
-        toolbarContainer.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        const toolbarContainer = document.getElementById('backup-toolbar-container');
+        if (!toolbarContainer) {
+            console.error("Error: No se encontró 'backup-toolbar-container'.");
+            return;
+        }
+
+        toolbarContainer.querySelectorAll('button').forEach(btn => btn.disabled = true); 
         if(buttonEl) toggleToolbarSpinner(buttonEl, true);
         
         const formData = new FormData();
@@ -118,29 +261,28 @@ export function initAdminBackupsManager() {
 
             if (result.success) {
                 showAlert(getTranslation(result.message || 'js.admin.backups.successGeneric'), 'success');
-                // Recargar la página para ver los cambios (nuevo archivo, o lista actualizada)
-                setTimeout(() => {
-                    // Usamos el sistema de navegación de la app para recargar la sección
-                    const link = document.createElement('a');
-                    link.href = window.projectBasePath + '/admin/manage-backups';
-                    link.setAttribute('data-nav-js', 'true');
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                }, 1500);
+                
+                // --- ▼▼▼ CORRECCIÓN: Actualizar UI dinámicamente ▼▼▼ ---
+                resetToolbarState(buttonEl);
+
+                if (action === 'create-backup' && result.newBackup) {
+                    renderNewBackup(result.newBackup);
+                } else if (action === 'delete-backup' && result.deletedFilename) {
+                    removeDeletedBackup(result.deletedFilename);
+                } else if (action === 'restore-backup') {
+                    // La restauración SÍ necesita recargar todo, por si acaso.
+                    showAlert('Restauración completada. Recargando...', 'success');
+                    setTimeout(() => location.reload(), 1500); 
+                }
+                // --- ▲▲▲ FIN DE CORRECCIÓN ▲▲▲ ---
 
             } else {
                 showAlert(getTranslation(result.message || 'js.admin.backups.errorGeneric'), 'error');
-                // Volver a habilitar botones en caso de error
-                toolbarContainer.querySelectorAll('button').forEach(btn => btn.disabled = false);
-                if(buttonEl) toggleToolbarSpinner(buttonEl, false);
-                clearBackupSelection(); // Restablecer estado
+                resetToolbarState(buttonEl);
             }
         } catch (error) {
             showAlert(getTranslation('js.api.errorServer'), 'error');
-            toolbarContainer.querySelectorAll('button').forEach(btn => btn.disabled = false);
-            if(buttonEl) toggleToolbarSpinner(buttonEl, false);
-            clearBackupSelection(); // Restablecer estado
+            resetToolbarState(buttonEl);
         }
     }
 
@@ -151,13 +293,14 @@ export function initAdminBackupsManager() {
         // 1. Verificar si estamos en la sección de backups
         const section = event.target.closest('[data-section="admin-backups"]');
         if (!section) {
-            // Si no estamos en la sección, limpiar selección por si acaso
             if (selectedBackupFile) clearBackupSelection();
             return;
         }
 
         // 2. Manejar selección de item
-        const backupCard = event.target.closest('.user-card-item[data-backup-filename]');
+        // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+        const backupCard = event.target.closest('.card-item[data-backup-filename]');
+        // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
         if (backupCard) {
             event.preventDefault();
             const filename = backupCard.dataset.backupFilename;
@@ -165,7 +308,9 @@ export function initAdminBackupsManager() {
             if (selectedBackupFile === filename) {
                 clearBackupSelection();
             } else {
-                const oldSelected = document.querySelector('.user-card-item.selected[data-backup-filename]');
+                // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
+                const oldSelected = document.querySelector('.card-item.selected[data-backup-filename]');
+                // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
                 if (oldSelected) {
                     oldSelected.classList.remove('selected');
                 }
@@ -179,7 +324,6 @@ export function initAdminBackupsManager() {
         // 3. Manejar botones de acción
         const button = event.target.closest('button[data-action]');
         if (!button) {
-             // Si se hace clic fuera de un botón o tarjeta, deseleccionar
             if (!event.target.closest('[data-module].active')) {
                 clearBackupSelection();
             }
@@ -197,16 +341,28 @@ export function initAdminBackupsManager() {
                 await handleBackupAction('create-backup', null, button);
                 break;
 
+            // --- ▼▼▼ INICIO DE MODIFICACIÓN ▼▼▼ ---
             case 'admin-backup-restore':
                 if (!selectedBackupFile) {
                     showAlert(getTranslation('admin.backups.errorNoSelection'), 'error');
                     return;
                 }
-                if (!confirm(getTranslation('admin.backups.confirmRestore', { filename: selectedBackupFile }))) {
-                    return;
-                }
-                await handleBackupAction('restore-backup', selectedBackupFile, button);
+                
+                // Ya no mostramos confirm()
+                // En su lugar, navegamos a la nueva página
+                const linkUrl = window.projectBasePath + '/admin/restore-backup?file=' + encodeURIComponent(selectedBackupFile);
+                
+                const link = document.createElement('a');
+                link.href = linkUrl;
+                link.setAttribute('data-nav-js', 'true'); 
+                // data-action no es necesario, la URL es suficiente
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            
+                clearBackupSelection(); 
                 break;
+            // --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
             
             case 'admin-backup-delete':
                 if (!selectedBackupFile) {
