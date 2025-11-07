@@ -1,5 +1,5 @@
 // ARCHIVO: assets/js/modules/chat-manager.js
-// (Versión modificada para CUADRÍCULA 2x2 CON CONTADOR)
+// (Versión modificada para NUEVO PAYLOAD y SIN AGRUPACIÓN DE 60s)
 
 import { callChatApi } from '../services/api-service.js';
 import { showAlert } from '../services/alert-manager.js';
@@ -8,7 +8,7 @@ import { hideTooltip } from '../services/tooltip-manager.js';
 
 const attachedFiles = new Map();
 let isSending = false;
-const MAX_GROUPING_TIME_MS = 60 * 1000; // 60 segundos
+// const MAX_GROUPING_TIME_MS = 60 * 1000; // <-- ELIMINADO
 
 /**
  * Limpia el input de chat, borra los archivos adjuntos y elimina las vistas previas.
@@ -110,6 +110,7 @@ function formatMessageTime(timestamp) {
 // --- ▼▼▼ ¡FUNCIÓN RENDERINCOMINGMESSAGE MODIFICADA! ▼▼▼ ---
 /**
  * Renderiza un nuevo mensaje en la UI del chat.
+ * ¡YA NO AGRUPA MENSAJES! CADA MENSAJE ES UNA NUEVA BURBUJA.
  * @param {object} msgData El objeto del mensaje (de la API/WS).
  */
 export function renderIncomingMessage(msgData) {
@@ -121,143 +122,76 @@ export function renderIncomingMessage(msgData) {
     const time = formatMessageTime(msgData.created_at);
     const msgTimestamp = new Date(msgData.created_at.replace(' ', 'T') + 'Z').getTime();
 
-    // 1. Comprobar si este mensaje debe agruparse con el anterior
-    const lastBubble = chatHistory.lastElementChild;
-    let isContinuation = false;
+    // --- LÓGICA DE AGRUPACIÓN (isContinuation) ELIMINADA ---
+    // ya no se comprueba el lastBubble
+
+    // --- 3. CREAR NUEVA BURBUJA (Ahora se ejecuta siempre) ---
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    if (isOwnMessage) {
+        bubble.classList.add('is-own');
+    }
+    bubble.dataset.userId = msgData.user_id;
+    bubble.dataset.timestamp = msgTimestamp;
+
+    // --- LÓGICA DE RENDERIZADO DE CUERPO (NUEVA) ---
+    let bodyContent = '';
+
+    // 1. Renderizar texto (si existe)
+    if (msgData.text_content) {
+        bodyContent += `<div class="chat-bubble-text">${msgData.text_content}</div>`;
+    }
+
+    // 2. Renderizar adjuntos (si existen)
+    if (msgData.attachments && msgData.attachments.length > 0) {
+        const attachments = msgData.attachments;
+        const attachment_count = attachments.length;
+        
+        let attachmentsHtml = `<div class="chat-bubble-attachments" data-count="${attachment_count}">`;
+
+        // Iterar solo hasta 4
+        for (let i = 0; i < Math.min(attachment_count, 4); i++) {
+            const attachment = attachments[i];
+            attachmentsHtml += `
+                <div class="chat-bubble-image">
+                    <img src="${attachment.public_url}" alt="Imagen adjunta" loading="lazy">
+            `;
+
+            // Si es el 4to item Y hay más de 4...
+            if (i === 3 && attachment_count > 4) {
+                const remaining = attachment_count - 4;
+                attachmentsHtml += `<div class="chat-image-overlay">+${remaining}</div>`;
+            }
+
+            attachmentsHtml += `</div>`; // Cierra chat-bubble-image
+        }
+
+        attachmentsHtml += `</div>`; // Cierra chat-bubble-attachments
+        bodyContent += attachmentsHtml;
+    }
+    // --- FIN LÓGICA DE RENDERIZADO DE CUERPO ---
+
+    bubble.innerHTML = `
+        <div class="chat-bubble-avatar" data-role="${msgData.user_role || 'user'}">
+            <img src="${avatarUrl}" alt="${msgData.username}">
+        </div>
+        <div class="chat-bubble-content">
+            <div class="chat-bubble-header">
+                <span class="chat-bubble-username">${msgData.username}</span>
+            </div>
+            <div class="chat-bubble-body">
+                ${bodyContent}
+            </div>
+            <div class="chat-bubble-footer">
+                <span class="chat-bubble-time">${time}</span>
+            </div>
+        </div>
+    `;
     
-    if (lastBubble && lastBubble.classList.contains('chat-bubble')) {
-        const lastUserId = lastBubble.dataset.userId;
-        const lastTimestamp = parseInt(lastBubble.dataset.timestamp, 10);
-        
-        if (lastUserId == msgData.user_id && (msgTimestamp - lastTimestamp) <= MAX_GROUPING_TIME_MS) {
-            isContinuation = true;
-        }
-    }
-
-    if (isContinuation) {
-        // --- 2. AGRUPAR MENSAJE ---
-        const bubbleContent = lastBubble.querySelector('.chat-bubble-content');
-        const bubbleBody = lastBubble.querySelector('.chat-bubble-body');
-        const bubbleFooter = lastBubble.querySelector('.chat-bubble-footer .chat-bubble-time');
-
-        if (!bubbleContent || !bubbleBody) return; 
-
-        if (msgData.message_type === 'text') {
-            // Si el último elemento era un grupo de imágenes, lo cerramos lógicamente.
-            // El texto siempre va en su propio div.
-            const textEl = document.createElement('div');
-            textEl.className = 'chat-bubble-text';
-            textEl.textContent = msgData.content;
-            bubbleBody.appendChild(textEl);
-        
-        } else if (msgData.message_type === 'image') {
-            
-            // Buscar si ya existe un contenedor de adjuntos
-            let attachments = bubbleBody.querySelector('.chat-bubble-attachments');
-            
-            // Si no existe O si el último elemento fue un texto, creamos un *nuevo* contenedor
-            if (!attachments || bubbleBody.lastElementChild.classList.contains('chat-bubble-text')) {
-                attachments = document.createElement('div');
-                attachments.className = 'chat-bubble-attachments';
-                attachments.dataset.count = '0'; // Empezar contador
-                bubbleBody.appendChild(attachments);
-            }
-            
-            const currentImageCount = attachments.children.length;
-            const newTotalCount = currentImageCount + 1;
-            attachments.dataset.count = newTotalCount; // Actualizar el contador total
-
-            // Lógica de la cuadrícula 2x2 + Overlay
-            
-            if (newTotalCount < 4) {
-                // 1ra, 2da o 3ra imagen: Simplemente añadirla
-                const imageEl = document.createElement('div');
-                imageEl.className = 'chat-bubble-image';
-                imageEl.innerHTML = `<img src="${msgData.content}" alt="Imagen adjunta" loading="lazy">`;
-                attachments.appendChild(imageEl);
-                
-            } else if (newTotalCount === 4) {
-                // 4ta imagen: Añadirla. Esta será la última visible.
-                const imageEl = document.createElement('div');
-                imageEl.className = 'chat-bubble-image';
-                imageEl.innerHTML = `<img src="${msgData.content}" alt="Imagen adjunta" loading="lazy">`;
-                attachments.appendChild(imageEl);
-                
-            } else if (newTotalCount === 5) {
-                // 5ta imagen: NO AÑADIRLA. Buscar la 4ta y ponerle el overlay "+1".
-                const fourthImage = attachments.children[3]; // Índice 3 es el 4to elemento
-                if (fourthImage) {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'chat-image-overlay';
-                    overlay.textContent = '+1';
-                    fourthImage.appendChild(overlay);
-                }
-            } else {
-                // 6ta, 7ma... imagen: NO AÑADIRLA. Buscar la 4ta y ACTUALIZAR el overlay.
-                const fourthImage = attachments.children[3];
-                if (fourthImage) {
-                    let overlay = fourthImage.querySelector('.chat-image-overlay');
-                    if (!overlay) { // Por si acaso, crearlo
-                        overlay = document.createElement('div');
-                        overlay.className = 'chat-image-overlay';
-                        fourthImage.appendChild(overlay);
-                    }
-                    const remainingCount = newTotalCount - 4;
-                    overlay.textContent = `+${remainingCount}`;
-                }
-            }
-        }
-
-        // Actualizar la hora de todo el grupo
-        if (bubbleFooter) {
-            bubbleFooter.textContent = time;
-        }
-        lastBubble.dataset.timestamp = msgTimestamp; // Actualizar el timestamp del grupo
-
-    } else {
-        // --- 3. CREAR NUEVA BURBUJA ---
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble';
-        if (isOwnMessage) {
-            bubble.classList.add('is-own');
-        }
-        bubble.dataset.userId = msgData.user_id;
-        bubble.dataset.timestamp = msgTimestamp;
-
-        let bodyContent = '';
-        if (msgData.message_type === 'text') {
-            bodyContent = `<div class="chat-bubble-text">${msgData.content}</div>`;
-        } else if (msgData.message_type === 'image') {
-            // Si es una imagen, ya debe tener el data-count="1"
-            bodyContent = `
-                <div class="chat-bubble-attachments" data-count="1">
-                    <div class="chat-bubble-image">
-                        <img src="${msgData.content}" alt="Imagen adjunta" loading="lazy">
-                    </div>
-                </div>`;
-        }
-
-        bubble.innerHTML = `
-            <div class="chat-bubble-avatar" data-role="${msgData.user_role || 'user'}">
-                <img src="${avatarUrl}" alt="${msgData.username}">
-            </div>
-            <div class="chat-bubble-content">
-                <div class="chat-bubble-header">
-                    <span class="chat-bubble-username">${msgData.username}</span>
-                </div>
-                <div class="chat-bubble-body">
-                    ${bodyContent}
-                </div>
-                <div class="chat-bubble-footer">
-                    <span class="chat-bubble-time">${time}</span>
-                </div>
-            </div>
-        `;
-        
-        chatHistory.appendChild(bubble);
-    }
-
+    chatHistory.appendChild(bubble);
+    
     // 4. Hacer scroll al final
+    // (Comprobar si el usuario está viendo mensajes antiguos podría ir aquí)
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 // --- ▲▲▲ FIN DE FUNCIÓN MODIFICADA ▲▲▲ ---
@@ -355,9 +289,10 @@ export function initChatManager() {
             const files = fileInput.files;
             if (!files) return;
 
-            // --- ▼▼▼ INICIO DE MODIFICACIÓN (Límite de 5 archivos) ▼▼▼ ---
-            if (attachedFiles.size + files.length > 5) {
-                showAlert(getTranslation('home.chat.error.onlyImages'), 'error'); // Reutilizo esta clave, deberías cambiarla
+            // --- ▼▼▼ INICIO DE MODIFICACIÓN (Límite de 9 archivos) ▼▼▼ ---
+            if (attachedFiles.size + files.length > 9) {
+                // (Deberías crear una clave i18n nueva para esto)
+                showAlert("No puedes adjuntar más de 9 imágenes.", 'error'); 
                 fileInput.value = ''; // Limpiar
                 return;
             }
@@ -386,6 +321,11 @@ export function initChatManager() {
 
             for (const file of files) {
                 if (file.type.startsWith('image/')) {
+                    // Limitar a 9 archivos en total
+                    if (attachedFiles.size >= 9) {
+                        showAlert("No puedes adjuntar más de 9 imágenes.", 'error');
+                        break; // Salir del bucle
+                    }
                     const fileId = `file-${Date.now()}-${Math.random()}`;
                     attachedFiles.set(fileId, file);
                     createPreview(file, fileId, previewContainer, inputWrapper);
