@@ -1,14 +1,12 @@
 <?php
 // FILE: includes/sections/main/home.php
-// (Contenido MODIFICADO para cargar grupo desde URL y cambiar texto)
+// (Contenido MODIFICADO para agrupar mensajes visualmente)
 
 // --- ▼▼▼ INICIO DE LÓGICA DE CARGA DE GRUPO ▼▼▼ ---
-// $current_group_info y $currentGroupUuid son definidos en config/routing/router.php
-// $pdo y $_SESSION['user_id'] están disponibles
-
-$user_groups = []; // Para el Popover
-$current_group_members = []; // Para el panel de miembros
-$group_messages = []; // <-- ¡NUEVO! Para el historial de chat
+$user_groups = []; 
+$current_group_members = [];
+$group_messages_raw = []; // Mensajes sin procesar de la BD
+$grouped_messages = []; // Mensajes agrupados para renderizar
 
 if (isset($_SESSION['user_id'], $pdo)) {
     
@@ -49,24 +47,25 @@ if (isset($_SESSION['user_id'], $pdo)) {
             logDatabaseError($e, 'home.php - load group members');
         }
 
-        // --- ▼▼▼ INICIO DE NUEVO BLOQUE (Cargar historial de chat) ▼▼▼ ---
+        // --- ▼▼▼ INICIO DE BLOQUE MODIFICADO (Cargar historial de chat) ▼▼▼ ---
         try {
+            // ¡MODIFICACIÓN! Añadimos 'u.role as user_role'
             $stmt_messages = $pdo->prepare(
                 "SELECT 
                     m.id, m.user_id, m.message_type, m.content, m.created_at,
-                    u.username, u.profile_image_url
+                    u.username, u.profile_image_url, u.role as user_role
                  FROM group_messages m
                  JOIN users u ON m.user_id = u.id
                  WHERE m.group_id = ?
                  ORDER BY m.created_at ASC
-                 LIMIT 50" // Cargar los últimos 50 mensajes
+                 LIMIT 50"
             );
             $stmt_messages->execute([$currentGroupId]);
-            $group_messages = $stmt_messages->fetchAll();
+            $group_messages_raw = $stmt_messages->fetchAll();
         } catch (PDOException $e) {
             logDatabaseError($e, 'home.php - load chat history');
         }
-        // --- ▲▲▲ FIN DE NUEVO BLOQUE ▲▲▲ ---
+        // --- ▲▲▲ FIN DE BLOQUE MODIFICADO ▲▲▲ ---
     }
 }
 
@@ -74,7 +73,6 @@ if (isset($_SESSION['user_id'], $pdo)) {
 $homeH1TextKey = 'home.chat.selectGroup';
 $homeH1Text = "Selecciona un grupo para comenzar a chatear"; // (i18n: home.chat.selectGroup)
 if (isset($current_group_info) && $current_group_info) {
-    // Si hay un grupo, el H1 se oculta y se muestra el chat
     $homeH1TextKey = 'home.chat.chattingWith';
     $homeH1Text = "Chat de " . htmlspecialchars($current_group_info['name']); // Fallback
 }
@@ -103,14 +101,73 @@ if (!empty($current_group_members)) {
 // --- ▼▼▼ INICIO DE NUEVA FUNCIÓN (Renderizar burbuja de chat en PHP) ▼▼▼ ---
 function formatMessageTimePHP($dateTimeString) {
     try {
-        $date = new DateTime($dateTimeString, new DateTimeZone('UTC')); // Asumir UTC
-        $date->setTimezone(new DateTimeZone('America/Chicago')); // Convertir a local (¡CAMBIAR A TU ZONA HORARIA!)
+        $date = new DateTime($dateTimeString, new DateTimeZone('UTC')); 
+        // --- ¡MODIFICACIÓN! Usar la zona horaria del usuario si está disponible, si no, 'UTC' ---
+        $userTimezone = $_SESSION['timezone'] ?? 'UTC'; 
+        $date->setTimezone(new DateTimeZone($userTimezone)); 
         return $date->format('H:i');
     } catch (Exception $e) {
         return "--:--";
     }
 }
 // --- ▲▲▲ FIN DE NUEVA FUNCIÓN ▲▲▲ ---
+
+
+// --- ▼▼▼ INICIO DE NUEVA LÓGICA DE AGRUPACIÓN DE MENSAJES ▼▼▼ ---
+$current_message_group = null;
+$max_time_diff_seconds = 60; // Agrupar mensajes si son del mismo usuario en 60 segundos
+
+foreach ($group_messages_raw as $msg) {
+    $isContinuation = false;
+    $msgTimestamp = strtotime($msg['created_at']);
+
+    if ($current_message_group !== null) {
+        $lastTimestamp = $current_message_group['timestamp_raw'];
+        $timeDiff = $msgTimestamp - $lastTimestamp;
+        
+        // Comprobar si es continuación (mismo usuario, poco tiempo)
+        if ($msg['user_id'] === $current_message_group['user_id'] && $timeDiff <= $max_time_diff_seconds) {
+            $isContinuation = true;
+        }
+    }
+
+    if ($isContinuation) {
+        // Añadir mensaje al grupo existente
+        $current_message_group['messages'][] = [
+            'type' => $msg['message_type'],
+            'content' => $msg['content']
+        ];
+        // Actualizar la hora del *grupo* a la hora del *último* mensaje
+        $current_message_group['timestamp_raw'] = $msgTimestamp;
+        $current_message_group['timestamp_formatted'] = formatMessageTimePHP($msg['created_at']);
+    } else {
+        // Guardar el grupo anterior si existe
+        if ($current_message_group !== null) {
+            $grouped_messages[] = $current_message_group;
+        }
+        
+        // Empezar un nuevo grupo
+        $current_message_group = [
+            'user_id' => $msg['user_id'],
+            'username' => $msg['username'],
+            'profile_image_url' => $msg['profile_image_url'],
+            'user_role' => $msg['user_role'], // <-- ¡Añadido para el borde!
+            'timestamp_raw' => $msgTimestamp,
+            'timestamp_formatted' => formatMessageTimePHP($msg['created_at']),
+            'messages' => [
+                [
+                    'type' => $msg['message_type'],
+                    'content' => $msg['content']
+                ]
+            ]
+        ];
+    }
+}
+// Guardar el último grupo
+if ($current_message_group !== null) {
+    $grouped_messages[] = $current_message_group;
+}
+// --- ▲▲▲ FIN DE NUEVA LÓGICA DE AGRUPACIÓN DE MENSAJES ▲▲▲ ---
 
 ?>
 
@@ -236,34 +293,67 @@ function formatMessageTimePHP($dateTimeString) {
                     </div>
                 <?php else: ?>
                     <?php
+                    // --- ▼▼▼ INICIO DE RENDERIZADO MODIFICADO ▼▼▼ ---
                     $defaultAvatar = "https://ui-avatars.com/api/?name=?&size=100&background=e0e0e0&color=ffffff";
-                    foreach($group_messages as $msg):
-                        $isOwnMessage = ($msg['user_id'] == $_SESSION['user_id']);
-                        $avatarUrl = $msg['profile_image_url'] ?? $defaultAvatar;
-                        if(empty($avatarUrl)) $avatarUrl = "https://ui-avatars.com/api/?name=" . urlencode($msg['username']) . "&size=100&background=e0e0e0&color=ffffff";
+                    foreach($grouped_messages as $group):
+                        $isOwnMessage = ($group['user_id'] == $_SESSION['user_id']);
+                        $avatarUrl = $group['profile_image_url'] ?? $defaultAvatar;
+                        if(empty($avatarUrl)) $avatarUrl = "https://ui-avatars.com/api/?name=" . urlencode($group['username']) . "&size=100&background=e0e0e0&color=ffffff";
                         
-                        $contentHtml = '';
-                        if ($msg['message_type'] === 'text') {
-                            $contentHtml = '<div class="chat-bubble-text">' . htmlspecialchars($msg['content']) . '</div>';
-                        } else if ($msg['message_type'] === 'image') {
-                            $contentHtml = '<div class="chat-bubble-image"><img src="' . htmlspecialchars($msg['content']) . '" alt="Imagen adjunta" loading="lazy"></div>';
+                        $messages_text = [];
+                        $messages_images = [];
+                        foreach ($group['messages'] as $msg) {
+                            if ($msg['type'] === 'text') {
+                                $messages_text[] = htmlspecialchars($msg['content']);
+                            } else if ($msg['type'] === 'image') {
+                                $messages_images[] = htmlspecialchars($msg['content']);
+                            }
                         }
                     ?>
-                        <div class="chat-bubble <?php echo $isOwnMessage ? 'is-own' : ''; ?>">
-                            <div class="chat-bubble-avatar">
-                                <img src="<?php echo $avatarUrl; ?>" alt="<?php echo htmlspecialchars($msg['username']); ?>">
+                        <div class="chat-bubble <?php echo $isOwnMessage ? 'is-own' : ''; ?>"
+                             data-user-id="<?php echo $group['user_id']; ?>"
+                             data-timestamp="<?php echo $group['timestamp_raw']; ?>">
+                            
+                            <!-- ¡MODIFICADO! Añadido data-role para el borde -->
+                            <div class="chat-bubble-avatar" data-role="<?php echo htmlspecialchars($group['user_role']); ?>">
+                                <img src="<?php echo $avatarUrl; ?>" alt="<?php echo htmlspecialchars($group['username']); ?>">
                             </div>
+                            
                             <div class="chat-bubble-content">
                                 <div class="chat-bubble-header">
-                                    <span class="chat-bubble-username"><?php echo htmlspecialchars($msg['username']); ?></span>
+                                    <span class="chat-bubble-username"><?php echo htmlspecialchars($group['username']); ?></span>
                                 </div>
-                                <?php echo $contentHtml; ?>
+                                
+                                <!-- ¡NUEVO! Contenedor de cuerpo -->
+                                <div class="chat-bubble-body">
+                                    <?php 
+                                    // 1. Renderizar texto (si existe)
+                                    if (!empty($messages_text)): ?>
+                                        <div class="chat-bubble-text">
+                                            <?php echo implode('<br>', $messages_text); // Unir múltiples textos si es necesario ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php 
+                                    // 2. Renderizar imágenes (si existen)
+                                    if (!empty($messages_images)): ?>
+                                        <div class="chat-bubble-attachments">
+                                            <?php foreach($messages_images as $img_url): ?>
+                                                <div class="chat-bubble-image">
+                                                    <img src="<?php echo $img_url; ?>" alt="Imagen adjunta" loading="lazy">
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                
                                 <div class="chat-bubble-footer">
-                                    <span class="chat-bubble-time"><?php echo formatMessageTimePHP($msg['created_at']); ?></span>
+                                    <span class="chat-bubble-time"><?php echo $group['timestamp_formatted']; ?></span>
                                 </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
+                    <!-- --- ▲▲▲ FIN DE RENDERIZADO MODIFICADO ▲▲▲ --- -->
                     
                     <script>
                         (function() {

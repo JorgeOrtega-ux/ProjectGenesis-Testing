@@ -1,14 +1,17 @@
 // ARCHIVO: assets/js/modules/chat-manager.js
-// (Versión modificada para enviar y renderizar mensajes)
+// (Versión modificada para AGRUPAR mensajes visualmente)
 
 import { callChatApi } from '../services/api-service.js';
 import { showAlert } from '../services/alert-manager.js';
 import { getTranslation } from '../services/i18n-manager.js';
 import { hideTooltip } from '../services/tooltip-manager.js';
 
-// Almacenará los archivos seleccionados.
 const attachedFiles = new Map();
-let isSending = false; // Evitar envíos duplicados
+let isSending = false;
+// --- ▼▼▼ ¡NUEVA CONSTANTE! ▼▼▼ ---
+// Tiempo máximo (en ms) para agrupar mensajes
+const MAX_GROUPING_TIME_MS = 60 * 1000; // 60 segundos
+// --- ▲▲▲ FIN DE MODIFICACIÓN ▲▲▲ ---
 
 /**
  * Limpia el input de chat, borra los archivos adjuntos y elimina las vistas previas.
@@ -96,9 +99,7 @@ function createPreview(file, fileId, previewContainer, inputWrapper) {
  */
 function formatMessageTime(timestamp) {
     try {
-        // Asumimos que el timestamp es UTC (o la hora del servidor)
         const date = new Date(timestamp.replace(' ', 'T') + 'Z');
-        // Convertir a la hora local del navegador
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
@@ -109,6 +110,7 @@ function formatMessageTime(timestamp) {
 }
 
 
+// --- ▼▼▼ ¡FUNCIÓN RENDERINCOMINGMESSAGE MODIFICADA! ▼▼▼ ---
 /**
  * Renderiza un nuevo mensaje en la UI del chat.
  * Esta función es llamada por app-init.js cuando llega un mensaje de WS.
@@ -118,52 +120,108 @@ export function renderIncomingMessage(msgData) {
     const chatHistory = document.getElementById('chat-history-container');
     if (!chatHistory) return;
 
-    // 1. Determinar si es mi propio mensaje
     const isOwnMessage = msgData.user_id === window.userId;
-
-    // 2. Crear el elemento de la burbuja
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble';
-    if (isOwnMessage) {
-        bubble.classList.add('is-own');
-    }
-    
-    // 3. Obtener avatar (usar un placeholder si no existe)
     const avatarUrl = msgData.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(msgData.username)}&size=100&background=e0e0e0&color=ffffff`;
+    const time = formatMessageTime(msgData.created_at);
+    const msgTimestamp = new Date(msgData.created_at.replace(' ', 'T') + 'Z').getTime();
+
+    // 1. Comprobar si este mensaje debe agruparse con el anterior
+    const lastBubble = chatHistory.lastElementChild;
+    let isContinuation = false;
     
-    // 4. Formatear contenido (Texto vs Imagen)
-    let contentHtml = '';
-    if (msgData.message_type === 'text') {
-        contentHtml = `<div class="chat-bubble-text">${msgData.content}</div>`;
-    } else if (msgData.message_type === 'image') {
-        contentHtml = `<div class="chat-bubble-image">
-            <img src="${msgData.content}" alt="Imagen adjunta" loading="lazy">
-        </div>`;
+    if (lastBubble && lastBubble.classList.contains('chat-bubble')) {
+        const lastUserId = lastBubble.dataset.userId;
+        const lastTimestamp = parseInt(lastBubble.dataset.timestamp, 10);
+        
+        if (lastUserId == msgData.user_id && (msgTimestamp - lastTimestamp) <= MAX_GROUPING_TIME_MS) {
+            isContinuation = true;
+        }
     }
 
-    // 5. Formatear hora
-    const time = formatMessageTime(msgData.created_at);
+    if (isContinuation) {
+        // --- 2. AGRUPAR MENSAJE ---
+        const bubbleContent = lastBubble.querySelector('.chat-bubble-content');
+        const bubbleBody = lastBubble.querySelector('.chat-bubble-body');
+        const bubbleFooter = lastBubble.querySelector('.chat-bubble-footer .chat-bubble-time');
 
-    // 6. Ensamblar el HTML
-    bubble.innerHTML = `
-        <div class="chat-bubble-avatar">
-            <img src="${avatarUrl}" alt="${msgData.username}">
-        </div>
-        <div class="chat-bubble-content">
-            <div class="chat-bubble-header">
-                <span class="chat-bubble-username">${msgData.username}</span>
-            </div>
-            ${contentHtml}
-            <div class="chat-bubble-footer">
-                <span class="chat-bubble-time">${time}</span>
-            </div>
-        </div>
-    `;
+        if (!bubbleContent || !bubbleBody) return; 
 
-    // 7. Añadir al DOM y hacer scroll
-    chatHistory.appendChild(bubble);
+        if (msgData.message_type === 'text') {
+            const textEl = document.createElement('div');
+            textEl.className = 'chat-bubble-text';
+            textEl.textContent = msgData.content;
+            bubbleBody.appendChild(textEl);
+        
+        } else if (msgData.message_type === 'image') {
+            let attachments = bubbleBody.querySelector('.chat-bubble-attachments');
+            if (!attachments) {
+                attachments = document.createElement('div');
+                attachments.className = 'chat-bubble-attachments';
+                bubbleBody.appendChild(attachments);
+            }
+            
+            const imageEl = document.createElement('div');
+            imageEl.className = 'chat-bubble-image';
+            imageEl.innerHTML = `<img src="${msgData.content}" alt="Imagen adjunta" loading="lazy">`;
+            attachments.appendChild(imageEl);
+        }
+
+        // Actualizar la hora de todo el grupo
+        if (bubbleFooter) {
+            bubbleFooter.textContent = time;
+        }
+        lastBubble.dataset.timestamp = msgTimestamp; // Actualizar el timestamp del grupo
+
+    } else {
+        // --- 3. CREAR NUEVA BURBUJA ---
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        if (isOwnMessage) {
+            bubble.classList.add('is-own');
+        }
+        // Añadir metadatos para la agrupación futura
+        bubble.dataset.userId = msgData.user_id;
+        bubble.dataset.timestamp = msgTimestamp;
+
+        // Formatear contenido (Texto vs Imagen)
+        let bodyContent = '';
+        if (msgData.message_type === 'text') {
+            bodyContent = `<div class="chat-bubble-text">${msgData.content}</div>`;
+        } else if (msgData.message_type === 'image') {
+            bodyContent = `
+                <div class="chat-bubble-attachments">
+                    <div class="chat-bubble-image">
+                        <img src="${msgData.content}" alt="Imagen adjunta" loading="lazy">
+                    </div>
+                </div>`;
+        }
+
+        // Ensamblar el HTML
+        bubble.innerHTML = `
+            <div class="chat-bubble-avatar" data-role="${msgData.user_role || 'user'}">
+                <img src="${avatarUrl}" alt="${msgData.username}">
+            </div>
+            <div class="chat-bubble-content">
+                <div class="chat-bubble-header">
+                    <span class="chat-bubble-username">${msgData.username}</span>
+                </div>
+                <div class="chat-bubble-body">
+                    ${bodyContent}
+                </div>
+                <div class="chat-bubble-footer">
+                    <span class="chat-bubble-time">${time}</span>
+                </div>
+            </div>
+        `;
+        
+        chatHistory.appendChild(bubble);
+    }
+
+    // 4. Hacer scroll al final
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
+// --- ▲▲▲ FIN DE FUNCIÓN MODIFICADA ▲▲▲ ---
+
 
 /**
  * Maneja el envío del formulario de chat.
@@ -177,11 +235,11 @@ async function handleSendMessage() {
     const csrfToken = window.csrfToken || '';
 
     if (!currentGroupUuid) {
-        showAlert('No hay un grupo seleccionado.', 'error'); // (Clave i18n: 'chat.error.noGroup')
+        showAlert(getTranslation('home.chat.error.noGroup'), 'error');
         return;
     }
 
-    const messageText = textInput ? textInput.innerText.trim() : ''; // .innerText para contenteditable
+    const messageText = textInput ? textInput.innerText.trim() : '';
     const hasFiles = attachedFiles.size > 0;
 
     if (!messageText && !hasFiles) {
@@ -231,11 +289,9 @@ async function handleSendMessage() {
  */
 export function initChatManager() {
     
-    // --- Delegación de eventos para botones ---
     document.body.addEventListener('click', (event) => {
         const target = event.target;
         
-        // 1. Botón de adjuntar (+)
         const attachButton = target.closest('#chat-attach-button');
         if (attachButton) {
             const fileInput = document.getElementById('chat-file-input');
@@ -245,7 +301,6 @@ export function initChatManager() {
             return;
         }
         
-        // 2. Botón de enviar (>)
         const sendButton = target.closest('#chat-send-button');
         if (sendButton) {
             handleSendMessage();
@@ -253,7 +308,6 @@ export function initChatManager() {
         }
     });
 
-    // --- Listener para el input de archivos ---
     document.body.addEventListener('change', (event) => {
         const fileInput = event.target.closest('#chat-file-input');
         
@@ -282,29 +336,26 @@ export function initChatManager() {
             }
 
             for (const file of files) {
-                // (Validación simple de tipo)
                 if (file.type.startsWith('image/')) {
                     const fileId = `file-${Date.now()}-${Math.random()}`;
                     attachedFiles.set(fileId, file);
                     createPreview(file, fileId, previewContainer, inputWrapper);
                 } else {
-                    showAlert('Solo se pueden adjuntar imágenes.', 'error'); // (i18n: 'chat.error.onlyImages')
+                    showAlert(getTranslation('home.chat.error.onlyImages'), 'error');
                 }
             }
 
-            fileInput.value = ''; // Limpiar el input
+            fileInput.value = '';
         }
     });
 
-    // --- Listener para presionar Enter en el área de texto ---
     document.body.addEventListener('keydown', (event) => {
         const textInput = event.target.closest('#chat-input-text-area');
         if (textInput && event.key === 'Enter') {
-            if (!event.shiftKey) { // Si no se presiona Shift + Enter
-                event.preventDefault(); // Prevenir el salto de línea
+            if (!event.shiftKey) {
+                event.preventDefault(); 
                 handleSendMessage();
             }
-            // Si se presiona Shift + Enter, el comportamiento por defecto (salto de línea) ocurre.
         }
     });
 }
