@@ -1,6 +1,6 @@
 <?php
 // FILE: includes/sections/main/home.php
-// (Contenido MODIFICADO para agrupar mensajes visualmente)
+// (CÓDIGO COMPLETO CORREGIDO CON CUADRÍCULA 2x2 Y CORRECCIÓN DE FUSIÓN)
 
 // --- ▼▼▼ INICIO DE LÓGICA DE CARGA DE GRUPO ▼▼▼ ---
 $user_groups = []; 
@@ -47,9 +47,8 @@ if (isset($_SESSION['user_id'], $pdo)) {
             logDatabaseError($e, 'home.php - load group members');
         }
 
-        // --- ▼▼▼ INICIO DE BLOQUE MODIFICADO (Cargar historial de chat) ▼▼▼ ---
+        // 3. Cargar historial de chat (existente)
         try {
-            // ¡MODIFICACIÓN! Añadimos 'u.role as user_role'
             $stmt_messages = $pdo->prepare(
                 "SELECT 
                     m.id, m.user_id, m.message_type, m.content, m.created_at,
@@ -65,11 +64,10 @@ if (isset($_SESSION['user_id'], $pdo)) {
         } catch (PDOException $e) {
             logDatabaseError($e, 'home.php - load chat history');
         }
-        // --- ▲▲▲ FIN DE BLOQUE MODIFICADO ▲▲▲ ---
     }
 }
 
-// 2. Preparar el texto para el H1
+// 4. Preparar el texto para el H1
 $homeH1TextKey = 'home.chat.selectGroup';
 $homeH1Text = "Selecciona un grupo para comenzar a chatear"; // (i18n: home.chat.selectGroup)
 if (isset($current_group_info) && $current_group_info) {
@@ -77,7 +75,7 @@ if (isset($current_group_info) && $current_group_info) {
     $homeH1Text = "Chat de " . htmlspecialchars($current_group_info['name']); // Fallback
 }
 
-// 3. Agrupar miembros (existente)
+// 5. Agrupar miembros (existente)
 $grouped_members = [
     'founder' => [], 'administrator' => [], 'moderator' => [], 'user' => []
 ];
@@ -98,11 +96,10 @@ if (!empty($current_group_members)) {
     }
 }
 
-// --- ▼▼▼ INICIO DE NUEVA FUNCIÓN (Renderizar burbuja de chat en PHP) ▼▼▼ ---
+// 6. Función Helper para formatear la hora (existente)
 function formatMessageTimePHP($dateTimeString) {
     try {
         $date = new DateTime($dateTimeString, new DateTimeZone('UTC')); 
-        // --- ¡MODIFICACIÓN! Usar la zona horaria del usuario si está disponible, si no, 'UTC' ---
         $userTimezone = $_SESSION['timezone'] ?? 'UTC'; 
         $date->setTimezone(new DateTimeZone($userTimezone)); 
         return $date->format('H:i');
@@ -110,12 +107,10 @@ function formatMessageTimePHP($dateTimeString) {
         return "--:--";
     }
 }
-// --- ▲▲▲ FIN DE NUEVA FUNCIÓN ▲▲▲ ---
 
-
-// --- ▼▼▼ INICIO DE NUEVA LÓGICA DE AGRUPACIÓN DE MENSAJES ▼▼▼ ---
+// 7. Lógica de agrupación de mensajes (existente)
 $current_message_group = null;
-$max_time_diff_seconds = 60; // Agrupar mensajes si son del mismo usuario en 60 segundos
+$max_time_diff_seconds = 60; 
 
 foreach ($group_messages_raw as $msg) {
     $isContinuation = false;
@@ -125,33 +120,27 @@ foreach ($group_messages_raw as $msg) {
         $lastTimestamp = $current_message_group['timestamp_raw'];
         $timeDiff = $msgTimestamp - $lastTimestamp;
         
-        // Comprobar si es continuación (mismo usuario, poco tiempo)
         if ($msg['user_id'] === $current_message_group['user_id'] && $timeDiff <= $max_time_diff_seconds) {
             $isContinuation = true;
         }
     }
 
     if ($isContinuation) {
-        // Añadir mensaje al grupo existente
         $current_message_group['messages'][] = [
             'type' => $msg['message_type'],
             'content' => $msg['content']
         ];
-        // Actualizar la hora del *grupo* a la hora del *último* mensaje
         $current_message_group['timestamp_raw'] = $msgTimestamp;
         $current_message_group['timestamp_formatted'] = formatMessageTimePHP($msg['created_at']);
     } else {
-        // Guardar el grupo anterior si existe
         if ($current_message_group !== null) {
             $grouped_messages[] = $current_message_group;
         }
-        
-        // Empezar un nuevo grupo
         $current_message_group = [
             'user_id' => $msg['user_id'],
             'username' => $msg['username'],
             'profile_image_url' => $msg['profile_image_url'],
-            'user_role' => $msg['user_role'], // <-- ¡Añadido para el borde!
+            'user_role' => $msg['user_role'],
             'timestamp_raw' => $msgTimestamp,
             'timestamp_formatted' => formatMessageTimePHP($msg['created_at']),
             'messages' => [
@@ -163,11 +152,10 @@ foreach ($group_messages_raw as $msg) {
         ];
     }
 }
-// Guardar el último grupo
 if ($current_message_group !== null) {
     $grouped_messages[] = $current_message_group;
 }
-// --- ▲▲▲ FIN DE NUEVA LÓGICA DE AGRUPACIÓN DE MENSAJES ▲▲▲ ---
+// --- ▲▲▲ FIN DE LÓGICA DE AGRUPACIÓN DE MENSAJES ▲▲▲ ---
 
 ?>
 
@@ -293,28 +281,18 @@ if ($current_message_group !== null) {
                     </div>
                 <?php else: ?>
                     <?php
-                    // --- ▼▼▼ INICIO DE RENDERIZADO MODIFICADO ▼▼▼ ---
+                    // --- ▼▼▼ INICIO DE RENDERIZADO MODIFICADO (ESTA ES LA CORRECCIÓN) ▼▼▼ ---
                     $defaultAvatar = "https://ui-avatars.com/api/?name=?&size=100&background=e0e0e0&color=ffffff";
                     foreach($grouped_messages as $group):
                         $isOwnMessage = ($group['user_id'] == $_SESSION['user_id']);
                         $avatarUrl = $group['profile_image_url'] ?? $defaultAvatar;
                         if(empty($avatarUrl)) $avatarUrl = "https://ui-avatars.com/api/?name=" . urlencode($group['username']) . "&size=100&background=e0e0e0&color=ffffff";
                         
-                        $messages_text = [];
-                        $messages_images = [];
-                        foreach ($group['messages'] as $msg) {
-                            if ($msg['type'] === 'text') {
-                                $messages_text[] = htmlspecialchars($msg['content']);
-                            } else if ($msg['type'] === 'image') {
-                                $messages_images[] = htmlspecialchars($msg['content']);
-                            }
-                        }
                     ?>
                         <div class="chat-bubble <?php echo $isOwnMessage ? 'is-own' : ''; ?>"
                              data-user-id="<?php echo $group['user_id']; ?>"
                              data-timestamp="<?php echo $group['timestamp_raw']; ?>">
                             
-                            <!-- ¡MODIFICADO! Añadido data-role para el borde -->
                             <div class="chat-bubble-avatar" data-role="<?php echo htmlspecialchars($group['user_role']); ?>">
                                 <img src="<?php echo $avatarUrl; ?>" alt="<?php echo htmlspecialchars($group['username']); ?>">
                             </div>
@@ -324,27 +302,96 @@ if ($current_message_group !== null) {
                                     <span class="chat-bubble-username"><?php echo htmlspecialchars($group['username']); ?></span>
                                 </div>
                                 
-                                <!-- ¡NUEVO! Contenedor de cuerpo -->
                                 <div class="chat-bubble-body">
                                     <?php 
-                                    // 1. Renderizar texto (si existe)
-                                    if (!empty($messages_text)): ?>
-                                        <div class="chat-bubble-text">
-                                            <?php echo implode('<br>', $messages_text); // Unir múltiples textos si es necesario ?>
-                                        </div>
-                                    <?php endif; ?>
+                                    // BLOQUE DE RENDERIZADO CORREGIDO (VERSIÓN 4)
+                                    // Esta lógica ahora imita al JS:
+                                    // 1. Agrupa imágenes consecutivas en bloques.
+                                    // 2. Un mensaje de texto siempre rompe un bloque de imágenes.
                                     
-                                    <?php 
-                                    // 2. Renderizar imágenes (si existen)
-                                    if (!empty($messages_images)): ?>
-                                        <div class="chat-bubble-attachments">
-                                            <?php foreach($messages_images as $img_url): ?>
+                                    // 1. Pre-procesar para encontrar los bloques de imágenes
+                                    $image_blocks = [];
+                                    $current_block = [];
+                                    foreach ($group['messages'] as $msg) {
+                                        if ($msg['type'] === 'image') {
+                                            $current_block[] = $msg;
+                                        } else if (!empty($current_block)) {
+                                            $image_blocks[] = $current_block; // Guardar bloque de imagen
+                                            $current_block = [];
+                                        }
+                                    }
+                                    if (!empty($current_block)) {
+                                        $image_blocks[] = $current_block; // Guardar el último bloque
+                                    }
+                                    
+                                    $image_block_pointer = 0; // Para saber qué bloque de imagen estamos renderizando
+                                    $was_last_message_text = false; // Estado
+                                    $current_image_block_rendered = 0; // Cuántas imágenes de este bloque hemos renderizado
+
+                                    foreach ($group['messages'] as $msg) {
+                                        
+                                        if ($msg['type'] === 'text') {
+                                            $was_last_message_text = true;
+                                            $current_image_block_rendered = 0; // Resetear
+                                    ?>
+                                            <div class="chat-bubble-text">
+                                                <?php echo htmlspecialchars($msg['content']); ?>
+                                            </div>
+                                    <?php
+                                        } elseif ($msg['type'] === 'image') {
+                                            
+                                            // Si el mensaje anterior fue texto, O si este es el primer mensaje de imagen del grupo (índice 0)
+                                            if ($was_last_message_text || $current_image_block_rendered === 0) {
+                                                // Empezar un nuevo bloque de adjuntos
+                                                $current_image_block_rendered = 0; // Resetear contador de renderizado
+                                                $was_last_message_text = false;
+                                                
+                                                // Obtener el bloque de imagen actual y contarlo
+                                                $current_image_block_count = count($image_blocks[$image_block_pointer]);
+                                                $image_block_pointer++; // Apuntar al siguiente bloque para la próxima vez
+                                                
+                                                echo '<div class="chat-bubble-attachments" data-count="' . $current_image_block_count . '">';
+                                            }
+                                            
+                                            // Lógica de renderizado de 4+
+                                            if ($current_image_block_count > 4) {
+                                                if ($current_image_block_rendered < 3) {
+                                                    // Imprimir las primeras 3
+                                    ?>
+                                                    <div class="chat-bubble-image">
+                                                        <img src="<?php echo htmlspecialchars($msg['content']); ?>" alt="Imagen adjunta" loading="lazy">
+                                                    </div>
+                                    <?php
+                                                } elseif ($current_image_block_rendered === 3) {
+                                                    // Imprimir la 4ta con overlay
+                                                    $remaining = $current_image_block_count - 4;
+                                    ?>
+                                                    <div class="chat-bubble-image">
+                                                        <img src="<?php echo htmlspecialchars($msg['content']); ?>" alt="Imagen adjunta" loading="lazy">
+                                                        <div class="chat-image-overlay">+<?php echo $remaining; ?></div>
+                                                    </div>
+                                    <?php
+                                                }
+                                                // Si es > 3, no hacer nada (no imprimir)
+                                            
+                                            } else {
+                                                // Lógica para 1-4 imágenes (imprimirlas todas)
+                                    ?>
                                                 <div class="chat-bubble-image">
-                                                    <img src="<?php echo $img_url; ?>" alt="Imagen adjunta" loading="lazy">
+                                                    <img src="<?php echo htmlspecialchars($msg['content']); ?>" alt="Imagen adjunta" loading="lazy">
                                                 </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php endif; ?>
+                                    <?php
+                                            }
+                                            
+                                            $current_image_block_rendered++; // Incrementar contador de renderizado
+
+                                            // Si este es el último mensaje de este bloque, cerrar el div
+                                            if ($current_image_block_rendered === $current_image_block_count) {
+                                                echo '</div>'; // Cierra .chat-bubble-attachments
+                                            }
+                                        }
+                                    } // Fin del bucle de mensajes (foreach $group['messages'])
+                                    ?>
                                 </div>
                                 
                                 <div class="chat-bubble-footer">
@@ -353,8 +400,6 @@ if ($current_message_group !== null) {
                             </div>
                         </div>
                     <?php endforeach; ?>
-                    <!-- --- ▲▲▲ FIN DE RENDERIZADO MODIFICADO ▲▲▲ --- -->
-                    
                     <script>
                         (function() {
                             const chatHistory = document.getElementById('chat-history-container');
